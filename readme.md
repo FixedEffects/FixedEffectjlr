@@ -6,7 +6,9 @@ This package uses the [`FixedEffectModels`](https://github.com/matthieugomez/Fix
 It is a substitute for the [`felm`](https://cran.r-project.org/web/packages/lfe/index.html) R package that happens to not converge for simple datasets.
 This uses the [`JuliaCall`](https://github.com/Non-Contradiction/JuliaCall) library to pass datasets into julia and process them.
 
-The package is very preliminary! 
+The package is very preliminary!
+
+Thanks to [Matthieu](https://github.com/matthieugomez) for writing `FixedEffectModels`!
 
 ## Usage
 
@@ -73,10 +75,11 @@ The functions prints out a table that is generated directly from julia. Moreover
 
 ## To do
 
-[ ] standard errors in line with stata
-[ ] class lm output
-[ ] getfe option
-[ ] `FixedEffectIV` function
+- [ ] standard errors in line with stata
+- [ ] class lm output
+- [ ] getfe option
+- [ ] `FixedEffectIV` function
+- [ ] Interactive fixed effect models from [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
  
 
 ## Prerequisite:
