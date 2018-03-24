@@ -65,3 +65,29 @@ FixedEffect(df, lhs = "y", rhs = "x1 + x2",
 FixedEffect(df, lhs = "y", rhs = "x1 + x2",
             fe = "id1 + id2", vcov = "cluster(id1 + id2)")
 ```
+
+
+Matthieu uses the following code in Stata:
+```
+clear all
+local N = 10000000
+local K = 100
+set obs `N'
+gen  id1 =  floor(runiform() * (`N'+1)/`K')
+gen  id2 =  floor(runiform() * (`K'+1))
+gen   y =  runiform()
+gen   x1 =  runiform()
+gen   x2 =  runiform()
+timer clear
+
+set rmsg on
+
+areg y x1 x2, a(id1)
+areg y x1 x2, a(id1) cl(id1)
+reghdfe y x1 x2, a(id1 id2) fast keepsingletons
+reghdfe y x1 x2, a(id1 id2) cl(id1 id2) fast keepsingletons
+```
+
+Benchmark including stata with log scale
+
+![benchmark_stata](./relative_perf_stata.svg)
