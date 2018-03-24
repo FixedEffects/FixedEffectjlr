@@ -70,6 +70,11 @@ FixedEffect <- function(dt,
     if (stringr::str_length(weights)>0){
       julia_reg_fe   = paste(julia_reg_fe, ", weights =", weights)
     } }
+  if (is.null(vcov)){  # default to robust
+    vcov <- "robust"
+  } else if (!stringr::str_detect(vcov, "cluster")) {
+    vcov <- "robust"
+  }
   julia_reg_vcov = paste("vcov = ", vcov)
   julia_reg_save = paste("save = ", ifelse(save_res, "true", "false"))
   julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_vcov, julia_reg_save),
@@ -109,7 +114,7 @@ FixedEffect <- function(dt,
   ## z$xlevels <- list()
   ## names(z$xlevels) <- c()
 
-  if (grep("cluster", vcov)){
+  if (stringr::str_detect(vcov, "cluster")){
     cluster_formula <- gsub("cluster", "",
                          gsub("[()]", "", vcov) )
   } else {
@@ -287,7 +292,7 @@ FixedEffect_models <- function(dt,
   for (reg_iter in seq(1, length(julia_reg))){
 
     reg_msg <- paste0("\n\nRegression ... ", reg_iter, " ...\n",
-                      r_final[[reg_iter]])
+                      gsub(", ", ",\n  ", r_final[[reg_iter]]))
     julia_command(paste0('print_with_color(:green, "', reg_msg, '\n")'))
     julia_command(julia_reg[[reg_iter]])
     julia_command(paste0("reg_res", reg_iter))
