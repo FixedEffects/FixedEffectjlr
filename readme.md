@@ -75,12 +75,13 @@ The functions prints out a table that is generated directly from julia. Moreover
 
 ## To do
 
-- [ ] standard errors in line with stata
-- [ ] class lm output
+- [x] standard errors in line with stata
 - [ ] getfe option
+- [ ] failsafe linear reg if no fe specified
 - [ ] `FixedEffectIV` function
+- [ ] class lm output
 - [ ] Interactive fixed effect models from [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
- 
+- [ ] implement with felm like formula
 
 ## Prerequisite:
 

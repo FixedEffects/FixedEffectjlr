@@ -1,4 +1,4 @@
-
+.FixedEffect <- new.env(parent = emptyenv())
 
 #' Do initial setup for FixedEffectjlr package.
 #'

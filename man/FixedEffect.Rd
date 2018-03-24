@@ -2,7 +2,7 @@
 % Please edit documentation in R/FixedEffectModels.R
 \name{FixedEffect}
 \alias{FixedEffect}
-\title{Use Ipopt solver to solve optimization problems.}
+\title{Use FixedEffectModels.jl to run large fixed effect models in julia}
 \usage{
 FixedEffect(dt, lhs, rhs, fe = NULL, weights = NULL, vcov = NULL,
   save_res = FALSE, print = TRUE)
@@ -16,11 +16,11 @@ FixedEffect(dt, lhs, rhs, fe = NULL, weights = NULL, vcov = NULL,
 
 \item{fe}{Fixed effects}
 
-\item{weights}{Regression weights (not yet coded)}
+\item{weights}{Regression weights}
 
 \item{vcov}{Specification for the error}
 
-\item{save_res}{Do we save the residuals (not yet coded)}
+\item{save_res}{Do we save the residuals}
 }
 \value{
 The return value will be a list which contains two elements at this point
@@ -28,7 +28,7 @@ The return value will be a list which contains two elements at this point
   summary: includes information that is of importance to write a table
 }
 \description{
-\code{IPOPT} returns the solution to the optimization problem found by Ipopt solver.
+\code{FixedEffect} returns the results of a linear fixed effect regression
 }
 \examples{
 See vignettes and readme

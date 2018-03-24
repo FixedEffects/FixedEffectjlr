@@ -5,12 +5,15 @@ Version: 0.1.0
 Date: 2018-03-22
 Authors@R: person("Erik", "Loualiche", email = "erikl@mit.edu", role = c("aut", "cre"))
 Description: Implements a R wrapper for FixedEffectModels julia package
-Depends: R (>= 3.4.0)
 License: MIT
 Encoding: UTF-8
 LazyData: true
-Imports: 
+Depends: 
+  R (>= 3.4.0),
   JuliaCall (>= 0.11.1)
+Imports: 
+  stringr,
+  purrr 
 Suggests: 
   data.table
 SystemRequirements: 
@@ -20,4 +23,5 @@ SystemRequirements:
   Distributions.jl,
   DataFrames.jl
 RoxygenNote: 6.0.1
-
+VignetteBuilder: knitr
+URL: https://github.com/eloualiche/FixedEffectjlr

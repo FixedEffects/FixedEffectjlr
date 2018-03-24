@@ -1,0 +1,46 @@
+---
+title: "Fixed Effect Models using R and Julia's `FixedEffectModels`"
+author: "Erik Loualiche"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+#output:
+#  md_document:
+#    variant: markdown_github
+always_allow_html: yes
+vignette: >
+  %\VignetteIndexEntry{Large scale fixed effect models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
+```{r, results='hide', warning = F, error = F, message = F, eval= T}
+library(FixedEffectjlr)
+JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
+FixedEffect_setup(JULIA_HOME)
+```
+
+Run the standard example from `FixedEffedtModels.jl`
+
+```{r, warning = F, error = F, message = F, eval= F}
+df <- Ecdat::Cigar
+reg_res <- FixedEffect(df,
+  lhs = "sales", rhs = "ndi",
+  fe      = "state + year",
+  weights = "pop",
+  vcov    = "cluster(state)")
+```
+
+Try different models and look at standard errors:
+```{r, warning = F, error = F, message = T, eval= T}
+df <- Ecdat::Cigar
+reg_res <- FixedEffect_models(
+  df,
+  lhs = "sales", rhs = "ndi",
+  fe      = "state + year",
+  weights = c("", "pop"),
+  vcov    = c("robust", "cluster(state)"))
+```
+
+

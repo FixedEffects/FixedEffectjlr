@@ -1,18 +1,14 @@
-.FixedEffect <- new.env(parent = emptyenv())
-
-
-
-#' Use Ipopt solver to solve optimization problems.
+#' Use FixedEffectModels.jl to run large fixed effect models in julia
 #'
-#' \code{IPOPT} returns the solution to the optimization problem found by Ipopt solver.
+#' \code{FixedEffect} returns the results of a linear fixed effect regression
 #'
 #' @param dt        dataset of interest
 #' @param lhs       String, Y regression variable
 #' @param rhs       String, X formula
 #' @param fe        Fixed effects
-#' @param weights   Regression weights (not yet coded)
+#' @param weights   Regression weights
 #' @param vcov      Specification for the error
-#' @param save_res  Do we save the residuals (not yet coded)
+#' @param save_res  Do we save the residuals
 #'
 #' @return The return value will be a list which contains two elements at this point
 #'   results: includes most of the observation from the julia call
@@ -69,10 +65,13 @@ FixedEffect <- function(dt,
 
   # set the options
   julia_reg_fe   = paste("fe =", stringr::str_replace_all(fe, "\\:", "\\&"))
-  julia_reg_wg   = paste("weights =", weights)
+  if (!is.null(weights)){
+    if (stringr::str_length(weights)>0){
+      julia_reg_fe   = paste(julia_reg_fe, ", weights =", weights)
+    } }
   julia_reg_vcov = paste("vcov = ", vcov)
   julia_reg_save = paste("save = ", ifelse(save_res, "true", "false"))
-  julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_wg, julia_reg_vcov, julia_reg_save),
+  julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_vcov, julia_reg_save),
                          collapse = ", ")
 
   julia_regcall = paste("reg_res = reg(dt_julia, @model(",
@@ -172,5 +171,121 @@ FixedEffect <- function(dt,
 
 
 
+#' Use FixedEffectModels.jl to run large fixed effect models in julia on multiple models
+#'
+#' \code{FixedEffect_models} returns the results of a linear fixed effect regression
+#'
+#' @param dt        dataset of interest
+#' @param lhs       String, a vector of Y regression variables
+#' @param rhs       String, a vector of X dependent variables
+#' @param fe        String, a vector of Fixed effects
+#' @param weights   Vector of regression weights (not yet coded)
+#' @param vcov      Vector of specification for the error
+#' @param save_res  Do we save the residuals (not yet coded)
+#'
+#' @return The return value will be a list which contains two elements at this point
+#'   results: includes most of the observation from the julia call
+#'   summary: includes information that is of importance to write a table
+#'
+#' @examples See vignettes and readme
+#'
+#' lhs <- c("log_ewemt", "f1_log_ewemt")
+#' rhs <- c("MP + retail_index + retail_index_MP",
+#'         "MP + discount_rate + discount_rate_MP")
+#' fe  <- c("date_y",
+#'          "date_y:fed_district + quarter:fed_district + industry_code_num:quarter")
+#' vcov <- c("robust", "cluster(date_y)")
+#'
+#' @export
+#####################################################################################################################
+FixedEffect_models <- function(dt,
+                               lhs,
+                               rhs,
+                               fe       = NULL,
+                               weights  = NULL,
+                               vcov     = NULL
+){
 
 
+
+  # 1. convert the dataset
+  dt_julia <- JuliaObject(dt)
+  julia_assign("dt_julia", dt_julia)
+
+
+  # 1. clean all the variables
+  # parse the fixed effects and convert to pooled
+  fe_split <- stringr::str_split(fe, "\\+")
+  fe_split <- purrr::map(fe_split, ~ stringr::str_split(., "\\:") )
+  fe_split <- purrr::map_chr(unlist(fe_split), ~ stringr::str_replace_all(., " ", "") )
+  fe_split <- unique(fe_split)
+  fe_julia <- purrr::map(fe, ~ stringr::str_replace_all(., "\\:", "\\&") )
+  if (is.null(vcov)){  # default to robust
+    vcov <- "robust"
+  }
+  cluster_split <- data.table::data.table(vcov)[, .(cluster_split = gsub("robust", "", vcov)) ]
+  cluster_split[, cluster_split := gsub("cluster", "", gsub("[()]", "", cluster_split)) ]
+  cluster_split[, cluster_split := gsub(" ", "", stringr::str_split(cluster_split, "\\+")) ]
+  cluster_split <- cluster_split[stringr::str_length(cluster_split)>0]$cluster_split
+
+  #########################################################################
+  # create pooled fe variables in the dataset
+  for (iter in seq(1, length(fe_split))){
+    pool_cmd = paste0("dt_julia[:", fe_split[iter], "]",
+                      " = categorical(dt_julia[:",
+                      fe_split[iter], "]);")
+    julia_command(pool_cmd)
+  }
+
+  if ( stringr::str_length(paste(cluster_split, collapse="")) > 0 ){
+    for (iter in seq(1, length(cluster_split))){
+      pool_cmd = paste0("dt_julia[:", cluster_split[iter], "]",
+                        " = categorical(dt_julia[:",
+                        cluster_split[iter], "]);")
+      julia_command(pool_cmd)
+    }
+  }
+
+  #########################################################################
+  # list of formulas
+  r_prelim <- purrr::cross2(.x = lhs, .y = rhs)
+  r_prelim <-purrr::map2(.x = r_prelim, .y = purrr::map(r_prelim, ~ paste(.x[[2]], collapse = " + ")),
+                         ~ paste(.x[[1]], "~", .y))
+  r_prelim
+
+  r_fe <- purrr::cross2(r_prelim, fe_julia)
+  r_fe <- purrr::map(.x=r_fe, ~ paste0(.x[[1]], ", fe = ", .x[[2]]))
+  r_fe
+
+  r_vcov <- purrr::cross2(r_fe, vcov)
+  r_vcov <- purrr::map(.x=r_vcov, ~ paste0(.x[[1]], ", vcov = ", .x[[2]]))
+  r_vcov
+
+  if (!is.null(weights)){
+    r_weights <- purrr::cross2(r_vcov, weights)
+    r_final <- purrr::map(.x=r_weights,
+                          ~ ifelse(stringr::str_length(.x[[2]])>0,
+                                   paste0(.x[[1]], ", weights = ", .x[[2]]),
+                                   .x[[1]]) )
+  } else {
+    r_final <- r_vcov
+  }
+
+  julia_reg <- purrr::map(r_final, ~ paste("reg(dt_julia, @model(", ., ") );") )
+  julia_reg <- paste0("reg_res", seq(1, length(julia_reg)), " = ", julia_reg)
+
+  n_reg <- length(julia_reg)
+  message("Running ... ", n_reg, " fixed effects regressions")
+
+  # Run the regression
+  for (reg_iter in seq(1, length(julia_reg))){
+
+    reg_msg <- paste0("\n\nRegression ... ", reg_iter, " ...\n",
+                      r_final[[reg_iter]])
+    julia_command(paste0('print_with_color(:green, "', reg_msg, '\n")'))
+    julia_command(julia_reg[[reg_iter]])
+    julia_command(paste0("reg_res", reg_iter))
+
+  }
+
+}
