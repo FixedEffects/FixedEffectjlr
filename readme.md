@@ -72,6 +72,11 @@ The functions prints out a table that is generated directly from julia. Moreover
   * `reg_res$results` should eventually become a regression class like `lm` or `felm` and keeps in memory most of the julia output
   * `reg_res$summary` is most useful to create regression tables and keep regressors, standard errors, etc...
   
+  
+## Benchmark
+
+I reproduced Matthieu's benchmark [here](./benchmark/benchmark.md)
+
 
 ## To do
 

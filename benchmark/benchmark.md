@@ -54,13 +54,13 @@ And using `FixedEffedtjlr`
 
 ```r
 FixedEffect(df, lhs = "y", rhs = "x1 + x2",
-            fe = "id1", vcov = "")
+            fe = "id1", vcov = "robust")
 
 FixedEffect(df, lhs = "y", rhs = "x1 + x2",
             fe = "id1", vcov = "cluster(id1)")
 
 FixedEffect(df, lhs = "y", rhs = "x1 + x2",
-            fe = "id1 + id2", vcov = "")
+            fe = "id1 + id2", vcov = "robust")
     
 FixedEffect(df, lhs = "y", rhs = "x1 + x2",
             fe = "id1 + id2", vcov = "cluster(id1 + id2)")
