@@ -24,7 +24,7 @@ FixedEffect <- function(dt,
                         fe       = NULL,
                         weights  = NULL,
                         vcov     = NULL,
-                        save_res = FALSE,    # do we save residuals
+                        save_res = FALSE,    # do we save residuals and fixed effects
                         print    = TRUE
 ){
 
@@ -35,6 +35,7 @@ FixedEffect <- function(dt,
 
   # parse the fixed effects and convert to pooled
   fe_split <- unlist( stringr::str_split(fe, "\\+") )
+  n_fe = length(fe_split)
   fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
   fe_split <- unique( stringr::str_replace_all(fe_split, " ", "") )
   # create pooled fe variables in the dataset
@@ -88,25 +89,26 @@ FixedEffect <- function(dt,
   jl_coefficients    = julia_eval("reg_res.coef")
   names(jl_coefficients) = julia_eval("reg_res.coefnames")
   z$coefficients = jl_coefficients
-  # residuals
-  ## z$residuals = julia_eval("residuals(reg_res, dt_julia_mp)") # only if necessary
+  if (save_res == TRUE){
+    z$residuals = julia_eval("reg_res.augmentdf[:residuals]")
+    z$fitted.values = julia_eval(paste0("dt_julia[:", lhs, "] - reg_res.augmentdf[:residuals]"))
+  }
+
   # effects
   ## z$effects = c(NA)
-  # rank
   z$rank = julia_eval("reg_res.nobs - reg_res.df_residual")
-  # fitted.values
-  ## z$fitted.values = c(NA)
   # assign
   ## z$assign = c(NA)
   # qr
   ## z$qr = c(NA)
-  # df.residual
+
   jl_df.residual = julia_eval("reg_res.df_residual")
   z$df.residual  = jl_df.residual
+
   # xlevels
   ## z$xlevels <- list()
   ## names(z$xlevels) <- c()
-  # call
+
   if (grep("cluster", vcov)){
     cluster_formula <- gsub("cluster", "",
                          gsub("[()]", "", vcov) )
@@ -131,6 +133,10 @@ FixedEffect <- function(dt,
 
   z$se = julia_eval("stderr(reg_res)")
   z$ci = julia_eval("confint(reg_res)")
+
+  if (save_res == TRUE){
+    z$fe = julia_eval(paste0("reg_res.augmentdf[:, 2:", n_fe+1, "]"))
+  }
 
   class(z) <- 'lm'
 
