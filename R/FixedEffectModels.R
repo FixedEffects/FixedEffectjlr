@@ -179,6 +179,58 @@ FixedEffect <- function(dt,
 }
 
 
+#' Use FixedEffectModels.jl to run large fixed effect models in julia on multiple models
+#'
+#' \code{FixedEffect_models} returns the results of a linear fixed effect regression
+#'
+#' @param dt        dataset of interest
+#' @param formula   formula of the y ~ x1 + x2 type
+#' @param fe        expression of fixed effects id1 + id2:id3
+#' @param weights   expression of weights
+#' @param vcov      error types, expression either robust or cluster(id1)
+#'
+#' @return The return value will be a list which contains two elements at this point
+#'   results: includes most of the observation from the julia call
+#'   summary: includes information that is of importance to write a table
+#'
+#' @examples See vignettes and readme
+#'   FixedEffect_nse(y ~ x1 + x2, id1 + id2, cluster(id1), save = T)
+#'
+#' @export
+#####################################################################################################################
+FixedEffect_nse <- function(dt,
+                            formula,
+                            fe       = NULL,
+                            weights  = NULL,
+                            vcov     = NULL,
+                            ...
+){
+
+  lhs = as.character(formula[[2]])
+  rhs = gsub("\\+", "", as.character(formula[[3]]))
+  rhs = paste(rhs[ stringr::str_length(rhs)>0 ], collapse = " + ")
+
+  w = deparse(substitute(weights))
+  if (w == "NULL"){ w = NULL }
+  v    = deparse(substitute(vcov))
+  if (v == "NULL"){ v = NULL }
+
+  FixedEffect(
+    dt,
+    lhs,
+    rhs,
+    fe      = deparse(substitute(fe)),
+    weights = w,
+    vcov    = v,
+    ...
+  )
+}
+
+
+
+
+
+
 
 
 
@@ -209,12 +261,13 @@ FixedEffect <- function(dt,
 #'
 #' @export
 #####################################################################################################################
-FixedEffect_models <- function(dt,
-                               lhs,
-                               rhs,
-                               fe       = NULL,
-                               weights  = NULL,
-                               vcov     = NULL
+FixedEffect_models <- function(
+  dt,
+  lhs,
+  rhs,
+  fe       = NULL,
+  weights  = NULL,
+  vcov     = NULL
 ){
 
 
@@ -288,7 +341,10 @@ FixedEffect_models <- function(dt,
   n_reg <- length(julia_reg)
   message("Running ... ", n_reg, " fixed effects regressions")
 
-  # Run the regression
+  # Run the regression and keep coefficients
+  coef_list <- list()
+  reg_list <- list()
+
   for (reg_iter in seq(1, length(julia_reg))){
 
     reg_msg <- paste0("\n\nRegression ... ", reg_iter, " ...\n",
@@ -297,6 +353,26 @@ FixedEffect_models <- function(dt,
     julia_command(julia_reg[[reg_iter]])
     julia_command(paste0("reg_res", reg_iter))
 
+    list_tmp <- list()
+    jl_coefficients    = julia_eval(paste0("reg_res", reg_iter, ".coef"))
+    names(jl_coefficients) = julia_eval(paste0("reg_res", reg_iter, ".coefnames"))
+    list_tmp$lhs =  julia_eval(paste0("reg_res", reg_iter, ".yname"))
+    list_tmp$coefficients = jl_coefficients
+    list_tmp$julia_call = r_final[[reg_iter]]
+    list_tmp$se = julia_eval(paste0("stderr(reg_res", reg_iter, ")"))
+    list_tmp$ci = julia_eval(paste0("confint(reg_res", reg_iter, ")"))
+    list_tmp$nobs = julia_eval(paste0("reg_res", reg_iter, ".nobs"))   # number of observations
+    list_tmp$r2    = list(r2 = julia_eval(paste0("reg_res", reg_iter, ".r2")),
+                          r2_adjusted = julia_eval(paste0("reg_res", reg_iter, ".r2_a")),
+                          r2_within = julia_eval(paste0("reg_res", reg_iter, ".r2_within")) )
+    list_tmp$statistics = list(F_stat = julia_eval(paste0("reg_res", reg_iter, ".F")),
+                               pvalue = julia_eval(paste0("reg_res", reg_iter, ".p")) )
+
+    coef_list[[reg_iter]] <- list_tmp
+    reg_list[[reg_iter]]  <- julia_eval(paste0("reg_res", reg_iter))
+
   }
+
+  return(list(coef = coef_list, julia_reg = reg_list))
 
 }

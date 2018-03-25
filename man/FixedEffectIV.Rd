@@ -4,7 +4,7 @@
 \alias{FixedEffectIV}
 \title{Use FixedEffectModels.jl to run large fixed effect models in julia}
 \usage{
-FixedEffectIV(dt, lhs, rhs, fe = NULL, weights = NULL, vcov = NULL,
+FixedEffectIV(dt, lhs, rhs, iv, fe = NULL, weights = NULL, vcov = NULL,
   save_res = FALSE, print = TRUE)
 }
 \arguments{

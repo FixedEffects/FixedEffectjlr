@@ -3,6 +3,7 @@
 export(FixedEffect)
 export(FixedEffectIV)
 export(FixedEffect_models)
+export(FixedEffect_nse)
 export(FixedEffect_setup)
 import(JuliaCall)
 import(data.table)

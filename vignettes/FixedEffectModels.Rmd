@@ -32,6 +32,11 @@ reg_res <- FixedEffect(df,
   vcov    = "cluster(state)")
 ```
 
+I tried to play with NSE, very much work in progress
+```{r, warning = F, error = F, message = F, eval= F}
+reg_res <- FixedEffect_nse(df, sales~ndi, state+year, pop, cluster(state))
+```
+
 Try different models and look at standard errors:
 ```{r, warning = F, error = F, message = T, eval= T}
 df <- Ecdat::Cigar
