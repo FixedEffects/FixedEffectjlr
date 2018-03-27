@@ -6,7 +6,7 @@ Date: 2018-03-22
 Authors@R: person("Erik", "Loualiche", email = "eloualic@umn.edu", role = c("aut", "cre"))
 Description: Implements a R wrapper for FixedEffectModels julia package
 License: MIT + file LICENSE
-open ./BugReports: https://github.com/eloualiche/FixedEffectjlr/issues
+BugReports: https://github.com/eloualiche/FixedEffectjlr/issues
 Encoding: UTF-8
 LazyData: true
 Depends: 
@@ -15,9 +15,10 @@ Depends:
 Imports: 
   rlang,
   stringr,
+  data.table,
   purrr 
 Suggests: 
-  data.table
+  magrittr
 SystemRequirements: 
   Julia (>= 0.6.0),
   FixedEffectModels.jl

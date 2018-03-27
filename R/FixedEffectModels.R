@@ -29,37 +29,22 @@ FixedEffect <- function(dt,
 ){
 
 
-  # 1. convert the dataset
-  dt_julia <- JuliaObject(dt)
-  julia_assign("dt_julia", dt_julia)
+  # 0. remove observations where lhs is missing (julia does not seem to handle well)
 
-  # parse the fixed effects and convert to pooled
+  # parse the rhs, fe and cluster
+  rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
+  rhs_split <- unique( stringr::str_replace_all(rhs_split, " ", "") )
+
   fe_split <- unlist( stringr::str_split(fe, "\\+") )
   n_fe = length(fe_split)
   fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
   fe_split <- unique( stringr::str_replace_all(fe_split, " ", "") )
-  # create pooled fe variables in the dataset
-  for (iter in seq(1, length(fe_split))){
-    pool_cmd = paste0("dt_julia[:", fe_split[iter], "]",
-                      " = categorical(dt_julia[:",
-                      fe_split[iter], "]);")
-    julia_command(pool_cmd)
-  }
 
   cluster_split <- gsub("cluster", "",
                      gsub("[()]", "",
                        gsub("robust", "", vcov) ) )
   cluster_split <- gsub(" ", "",
                      unlist( stringr::str_split(cluster_split, "\\+") ) )
-  if ( stringr::str_length(paste(cluster_split, collapse="")) > 0 ){
-    for (iter in seq(1, length(cluster_split))){
-      pool_cmd = paste0("dt_julia[:", cluster_split[iter], "]",
-                        " = categorical(dt_julia[:",
-                        cluster_split[iter], "]);")
-      julia_command(pool_cmd)
-    }
-  }
-
 
   # set the formula for julia
   julia_formula  = paste(lhs, "~", rhs)
@@ -80,9 +65,30 @@ FixedEffect <- function(dt,
   julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_vcov, julia_reg_save),
                          collapse = ", ")
 
-  julia_regcall = paste("reg_res = reg(dt_julia, @model(",
+  julia_regcall = paste("reg_res = reg(df_julia, @model(",
                         paste(c(julia_formula, julia_reg_opt), collapse = ", "),
                         ") );")
+
+  # move only the right amount of data into julia (faster)
+  col_keep = intersect(names(dt), c(lhs, rhs_split, fe_split, cluster_split))
+  dt_julia <- JuliaObject(data.table(dt)[, c(col_keep), with = F ])
+  julia_assign("df_julia", dt_julia)
+
+  # create pooled fe variables in the dataset
+  for (iter in seq(1, length(fe_split))){
+    pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
+                      " = categorical(df_julia[:",
+                      fe_split[iter], "]);")
+    julia_command(pool_cmd)
+  }
+  if ( stringr::str_length(paste(cluster_split, collapse="")) > 0 ){
+    for (iter in seq(1, length(cluster_split))){
+      pool_cmd = paste0("df_julia[:", cluster_split[iter], "]",
+                        " = categorical(df_julia[:",
+                        cluster_split[iter], "]);")
+      julia_command(pool_cmd)
+    }
+  }
 
   # Run the regression
   julia_command(julia_regcall)
@@ -96,7 +102,7 @@ FixedEffect <- function(dt,
   z$coefficients = jl_coefficients
   if (save_res == TRUE){
     z$residuals = julia_eval("reg_res.augmentdf[:residuals]")
-    z$fitted.values = julia_eval(paste0("dt_julia[:", lhs, "] - reg_res.augmentdf[:residuals]"))
+    z$fitted.values = julia_eval(paste0("df_julia[:", lhs, "] - reg_res.augmentdf[:residuals]"))
   }
 
   # effects
@@ -207,8 +213,8 @@ FixedEffect_nse <- function(dt,
 ){
 
   lhs = as.character(formula[[2]])
-  rhs = gsub("\\+", "", as.character(formula[[3]]))
-  rhs = paste(rhs[ stringr::str_length(rhs)>0 ], collapse = " + ")
+  rhs <- unlist(stringr::str_split(as.character(formula[[3]]), "\\+"))
+  rhs <- paste(gsub(" ", "", rhs)[stringr::str_length(rhs)>0], collapse = " + ")
 
   w = deparse(substitute(weights))
   if (w == "NULL"){ w = NULL }
@@ -270,14 +276,11 @@ FixedEffect_models <- function(
   vcov     = NULL
 ){
 
+  #########################################################################
+  # 1. clean all the variables; parse the rhs, fe and cluster
+  rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
+  rhs_split <- unique( stringr::str_replace_all(rhs_split, " ", "") )
 
-
-  # 1. convert the dataset
-  dt_julia <- JuliaObject(dt)
-  julia_assign("dt_julia", dt_julia)
-
-
-  # 1. clean all the variables
   # parse the fixed effects and convert to pooled
   fe_split <- stringr::str_split(fe, "\\+")
   fe_split <- purrr::map(fe_split, ~ stringr::str_split(., "\\:") )
@@ -293,25 +296,38 @@ FixedEffect_models <- function(
   cluster_split <- cluster_split[stringr::str_length(cluster_split)>0]$cluster_split
 
   #########################################################################
+  # 2. move only the right amount of data into julia (faster)
+  col_keep = intersect(names(dt), c(lhs, rhs_split, fe_split, cluster_split))
+  dt <- data.table(dt)[, c(col_keep), with = F ]
+  # fill NAs on lhs, sometimes object passed onto julia ends having NaN instead of missing
+  for ( lhs_iter in seq(1, length(lhs)) ){
+    dt[ !is.finite(get(lhs[lhs_iter])), c(lhs[lhs_iter]) := NA ]
+    # dt_tmp[ !is.finite(dt_tmp[[lhs[lhs_iter]]]), c(lhs[lhs_iter]) := NA ] # Alternative writing in data.table
+  }
+  # pass the data unto julia
+  dt_julia <- JuliaObject(dt)
+  julia_assign("df_julia", dt_julia)
+
   # create pooled fe variables in the dataset
   for (iter in seq(1, length(fe_split))){
-    pool_cmd = paste0("dt_julia[:", fe_split[iter], "]",
-                      " = categorical(dt_julia[:",
+    pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
+                      " = categorical(df_julia[:",
                       fe_split[iter], "]);")
     julia_command(pool_cmd)
   }
 
   if ( stringr::str_length(paste(cluster_split, collapse="")) > 0 ){
     for (iter in seq(1, length(cluster_split))){
-      pool_cmd = paste0("dt_julia[:", cluster_split[iter], "]",
-                        " = categorical(dt_julia[:",
+      pool_cmd = paste0("df_julia[:", cluster_split[iter], "]",
+                        " = categorical(df_julia[:",
                         cluster_split[iter], "]);")
       julia_command(pool_cmd)
     }
   }
 
+
   #########################################################################
-  # list of formulas
+  # 3. list of formulas
   r_prelim <- purrr::cross2(.x = lhs, .y = rhs)
   r_prelim <-purrr::map2(.x = r_prelim, .y = purrr::map(r_prelim, ~ paste(.x[[2]], collapse = " + ")),
                          ~ paste(.x[[1]], "~", .y))
@@ -335,12 +351,10 @@ FixedEffect_models <- function(
     r_final <- r_vcov
   }
 
-  julia_reg <- purrr::map(r_final, ~ paste("reg(dt_julia, @model(", ., ") );") )
+  julia_reg <- purrr::map(r_final, ~ paste("reg(df_julia, @model(", ., ") )") )
   julia_reg <- paste0("reg_res", seq(1, length(julia_reg)), " = ", julia_reg)
-
   n_reg <- length(julia_reg)
   message("Running ... ", n_reg, " fixed effects regressions")
-
   # Run the regression and keep coefficients
   coef_list <- list()
   reg_list <- list()
@@ -350,7 +364,7 @@ FixedEffect_models <- function(
     reg_msg <- paste0("\n\nRegression ... ", reg_iter, " ...\n",
                       gsub(", ", ",\n  ", r_final[[reg_iter]]))
     julia_command(paste0('print_with_color(:green, "', reg_msg, '\n")'))
-    julia_command(julia_reg[[reg_iter]])
+    julia_command(paste(julia_reg[[reg_iter]]))
     julia_command(paste0("reg_res", reg_iter))
 
     list_tmp <- list()
@@ -373,6 +387,7 @@ FixedEffect_models <- function(
 
   }
 
+  # return both all of the regression and coefficient subset
   return(list(coef = coef_list, julia_reg = reg_list))
 
 }
