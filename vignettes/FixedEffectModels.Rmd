@@ -37,6 +37,18 @@ I tried to play with NSE, very much work in progress
 reg_res <- FixedEffect_nse(df, sales~ndi, state+year, pop, cluster(state))
 ```
 
+Waiting for a full `lm` object, I added a `coeftest` object so that it is possible to look at output with stargazer:
+```{r, warning = F, error = F, message = F, eval= T}
+df <- Ecdat::Cigar
+reg1 <- FixedEffect_nse(df, sales~ndi, state+year, pop, robust)
+reg2 <- FixedEffect_nse(df, sales~ndi, state+year, pop, cluster(state))
+reg3 <- FixedEffect_nse(df, sales~ndi, state+year, vcov = robust)
+reg4 <- FixedEffect_nse(df, sales~ndi, state+year, vcov = cluster(state))
+stargazer::stargazer(reg1$summary$coeftest, reg2$summary$coeftest,
+                     reg3$summary$coeftest, reg4$summary$coeftest,
+                     type = "text")
+```
+
 Try different models and look at standard errors:
 ```{r, warning = F, error = F, message = T, eval= T}
 df <- Ecdat::Cigar

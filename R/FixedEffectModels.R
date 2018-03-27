@@ -70,8 +70,14 @@ FixedEffect <- function(dt,
                         ") );")
 
   # move only the right amount of data into julia (faster)
-  col_keep = intersect(names(dt), c(lhs, rhs_split, fe_split, cluster_split))
-  dt_julia <- JuliaObject(data.table(dt)[, c(col_keep), with = F ])
+  col_keep = intersect(names(dt), c(lhs, rhs_split, fe_split, cluster_split, weights))
+  dt <- data.table(dt)[, c(col_keep), with = F ]
+  # fill NAs on lhs, sometimes object passed onto julia ends having NaN instead of missing
+  for ( lhs_iter in seq(1, length(lhs)) ){
+    dt[ !is.finite(get(lhs[lhs_iter])), c(lhs[lhs_iter]) := NA ]
+    # dt_tmp[ !is.finite(dt_tmp[[lhs[lhs_iter]]]), c(lhs[lhs_iter]) := NA ] # Alternative writing in data.table
+  }
+  dt_julia <- JuliaObject(dt)
   julia_assign("df_julia", dt_julia)
 
   # create pooled fe variables in the dataset
@@ -104,7 +110,6 @@ FixedEffect <- function(dt,
     z$residuals = julia_eval("reg_res.augmentdf[:residuals]")
     z$fitted.values = julia_eval(paste0("df_julia[:", lhs, "] - reg_res.augmentdf[:residuals]"))
   }
-
   # effects
   ## z$effects = c(NA)
   z$rank = julia_eval("reg_res.nobs - reg_res.df_residual")
@@ -112,10 +117,8 @@ FixedEffect <- function(dt,
   ## z$assign = c(NA)
   # qr
   ## z$qr = c(NA)
-
   jl_df.residual = julia_eval("reg_res.df_residual")
   z$df.residual  = jl_df.residual
-
   # xlevels
   ## z$xlevels <- list()
   ## names(z$xlevels) <- c()
@@ -129,6 +132,7 @@ FixedEffect <- function(dt,
   R_call = paste(julia_formula, "|", fe, "| 0 |", cluster_formula)
   z$call = list(R_call = as.formula(R_call), julia_call = julia_regcall)
   # terms
+  z$terms = terms(as.formula(R_call))
 
   # other stuff
   z$nobs = julia_eval("reg_res.nobs")   # number of observations
@@ -158,24 +162,27 @@ FixedEffect <- function(dt,
 
   # BUILD COEFFICIENT TABLE LIST
   ct <- list()   # CoefTable2
-
-
-
-
   julia_eval("jl_table = coeftable(reg_res);")
-
   ct$ctitle   = julia_eval("title(reg_res)")
   ct$ctop     = julia_eval("top(reg_res)")
   ct$cc       = julia_eval("coef(reg_res)")             # coefficients
   ct$se       = julia_eval("stderr(reg_res)")
+  ct$tt       = julia_eval("coef(reg_res) ./ stderr(reg_res)")
+  ct$pvalues  = julia_eval("coeftable(reg_res).mat[:,4]")
   ct$coefnms  = julia_eval("coefnames(reg_res)")
   ct$conf_int = julia_eval("confint(reg_res)")
-  ct$tt       = julia_eval("coef(reg_res) ./ stderr(reg_res)")
+  ct$mat      = julia_eval("jl_table.mat")
+  ct$colnms   = julia_eval("jl_table.colnms")
+  ct$rownms   = julia_eval("jl_table.rownms")
+  ct$pvalcol  = julia_eval("jl_table.pvalcol")
 
-  ct$mat = julia_eval("jl_table.mat")
-  ct$colnms  = julia_eval("jl_table.colnms")
-  ct$rownms  = julia_eval("jl_table.rownms")
-  ct$pvalcol = julia_eval("jl_table.pvalcol")
+  # Coeftest class is easy: only need coefficients
+  Rcoef = matrix(c(ct$cc, ct$se, ct$tt, ct$pvalues),
+                 nrow=length(ct$coefnms), ncol=4, byrow = F)
+  colnames(Rcoef) = c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  rownames(Rcoef) = ct$coefnms
+  class(Rcoef) = "coeftest"
+  ct$coeftest = Rcoef
 
   # ---------------------------------------------------------------------------------
   return(list(results = z,
@@ -297,7 +304,7 @@ FixedEffect_models <- function(
 
   #########################################################################
   # 2. move only the right amount of data into julia (faster)
-  col_keep = intersect(names(dt), c(lhs, rhs_split, fe_split, cluster_split))
+  col_keep = intersect(names(dt), c(lhs, rhs_split, fe_split, cluster_split, weights))
   dt <- data.table(dt)[, c(col_keep), with = F ]
   # fill NAs on lhs, sometimes object passed onto julia ends having NaN instead of missing
   for ( lhs_iter in seq(1, length(lhs)) ){
