@@ -3,10 +3,11 @@
 #' \code{FixedEffect} returns the results of a linear fixed effect regression
 #'
 #' @param dt        dataset of interest
-#' @param lhs       String, Y regression variable
-#' @param rhs       String, X formula
-#' @param fe        Fixed effects
-#' @param weights   Regression weights
+#' @param formula   formula of the y ~ x1 + x2 type
+#' @param iv        formula endogenous on exogenous variable
+#' @param fe        expression of fixed effects id1 + id2:id3
+#' @param vcov      error types, expression either robust or cluster(id1)
+#' @param weights   expression of weights
 #' @param vcov      Specification for the error
 #' @param save_res  Do we save the residuals
 #'
@@ -18,17 +19,104 @@
 #'
 #' @export
 #####################################################################################################################
-FixedEffectIV <- function(dt,
-                          lhs,
-                          rhs,
-                          iv,
-                          fe       = NULL,
-                          weights  = NULL,
-                          vcov     = NULL,
-                          save_res = FALSE,    # do we save residuals and fixed effects
-                          print    = TRUE
+FixedEffectIV_nse <- function(
+  dt,
+  formula,
+  iv,
+  fe       = NULL,
+  weights  = NULL,
+  vcov     = NULL,
+  save_res = FALSE,    # do we save residuals and fixed effects
+  print    = TRUE
 ){
 
+  # Parse the formulas
+  lhs = as.character(formula[[2]])
+  rhs <- unlist(stringr::str_split(as.character(formula[[3]]), "\\+"))
+  rhs <- paste(gsub(" ", "", rhs)[stringr::str_length(rhs)>0], collapse = " + ")
+  fe  <- deparse(substitute(fe))
+  weights = deparse(substitute(weights))
+  if (weights == "NULL"){ weights = NULL }
+  vcov    = deparse(substitute(vcov))
+  if (vcov == "NULL"){ vcov = NULL }
+
+  # parse the rhs, fe and cluster
+  rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
+  rhs_split <- unique( stringr::str_replace_all(rhs_split, " ", "") )
+
+  fe_split <- unlist( stringr::str_split(fe, "\\+") )
+  n_fe = length(fe_split)
+  fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
+  fe_split <- unique( stringr::str_replace_all(fe_split, " ", "") )
+
+  cluster_split <- gsub("cluster", "",
+                        gsub("[()]", "",
+                             gsub("robust", "", vcov) ) )
+  cluster_split <- gsub(" ", "",
+                        unlist( stringr::str_split(cluster_split, "\\+") ) )
+
+  # set the formula for julia
+  julia_formula  = paste(lhs, "~", rhs)
+
+  # set the iv formula
+  endogenous_var = as.character(iv[[2]])
+  instrument_split = unlist(stringr::str_split(as.character(iv[[3]]), "\\+"))
+  instrument_split = gsub(" ", "", instrument_split)[stringr::str_length(instrument_split)>0]
+  instrument_var <- paste(instrument_split, collapse = " + ")
+  julia_iv = paste("(", endogenous_var, "~", instrument_var, ")")
+  julia_formula = paste(julia_formula, "+", julia_iv)
+
+  # set the options
+  julia_reg_fe   = paste("fe =", stringr::str_replace_all(fe, "\\:", "\\&"))
+  if (!is.null(weights)){
+    if (stringr::str_length(weights)>0){
+      julia_reg_fe   = paste(julia_reg_fe, ", weights =", weights)
+    } }
+  if (is.null(vcov)){  # default to robust
+    vcov <- "robust"
+  } else if (!stringr::str_detect(vcov, "cluster")) {
+    vcov <- "robust"
+  }
+  julia_reg_vcov = paste("vcov = ", vcov)
+  julia_reg_save = paste("save = ", ifelse(save_res, "true", "false"))
+  julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_vcov, julia_reg_save),
+                         collapse = ", ")
+
+  julia_regcall = paste("reg_res = reg(df_julia, @model(",
+                        paste(c(julia_formula, julia_reg_opt), collapse = ", "),
+                        ") );")
+
+  # move only the right amount of data into julia (faster)
+  col_keep = unique(intersect(names(dt),
+    c(lhs, rhs_split, endogenous_var, instrument_split, fe_split, cluster_split, weights)))
+  dt <- data.table(dt)[, c(col_keep), with = F ]
+  # fill NAs on lhs, sometimes object passed onto julia ends having NaN instead of missing
+  for ( lhs_iter in seq(1, length(lhs)) ){
+    dt[ !is.finite(get(lhs[lhs_iter])), c(lhs[lhs_iter]) := NA ]
+    # dt_tmp[ !is.finite(dt_tmp[[lhs[lhs_iter]]]), c(lhs[lhs_iter]) := NA ] # Alternative writing in data.table
+  }
+  dt_julia <- JuliaObject(dt)
+  julia_assign("df_julia", dt_julia)
+
+  # create pooled fe variables in the dataset
+  for (iter in seq(1, length(fe_split))){
+    pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
+                      " = categorical(df_julia[:",
+                      fe_split[iter], "]);")
+    julia_command(pool_cmd)
+  }
+  if ( stringr::str_length(paste(cluster_split, collapse="")) > 0 ){
+    for (iter in seq(1, length(cluster_split))){
+      pool_cmd = paste0("df_julia[:", cluster_split[iter], "]",
+                        " = categorical(df_julia[:",
+                        cluster_split[iter], "]);")
+      julia_command(pool_cmd)
+    }
+  }
+
+  # Run the regression
+  julia_command(julia_regcall)
+  julia_command("reg_res")
 
 
 

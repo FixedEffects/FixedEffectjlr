@@ -29,8 +29,6 @@ FixedEffect <- function(dt,
 ){
 
 
-  # 0. remove observations where lhs is missing (julia does not seem to handle well)
-
   # parse the rhs, fe and cluster
   rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
   rhs_split <- unique( stringr::str_replace_all(rhs_split, " ", "") )
@@ -223,6 +221,7 @@ FixedEffect_nse <- function(dt,
   rhs <- unlist(stringr::str_split(as.character(formula[[3]]), "\\+"))
   rhs <- paste(gsub(" ", "", rhs)[stringr::str_length(rhs)>0], collapse = " + ")
 
+  f = deparse(substitute(fe))
   w = deparse(substitute(weights))
   if (w == "NULL"){ w = NULL }
   v    = deparse(substitute(vcov))
@@ -232,7 +231,7 @@ FixedEffect_nse <- function(dt,
     dt,
     lhs,
     rhs,
-    fe      = deparse(substitute(fe)),
+    f,
     weights = w,
     vcov    = v,
     ...

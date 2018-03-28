@@ -21,7 +21,8 @@ First setup julia to work within R with `JuliaCall`
 
 ```r
 library(FixedEffectjlr)
-FixedEffect_setup("/Applications/Julia-0.6.app/Contents/Resources/julia/bin/")
+JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
+FixedEffect_setup(JULIA_HOME)
 ```
 
 To run a regression with fixed effects
@@ -81,7 +82,7 @@ I reproduced Matthieu's benchmark [here](./benchmark/benchmark.md)
 ## To do
 
 - [ ] failsafe linear reg if no fe specified
-- [ ] `FixedEffectIV` function
+- [\] `FixedEffectIV` function
 - [ ] class lm output
 - [ ] Interactive fixed effect models from [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
 - [ ] implement with felm like formula
