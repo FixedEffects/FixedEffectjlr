@@ -72,25 +72,35 @@ The functions prints out a table that is generated directly from julia. Moreover
   
   * `reg_res$results` should eventually become a regression class like `lm` or `felm` and keeps in memory most of the julia output
   * `reg_res$summary` is most useful to create regression tables and keep regressors, standard errors, etc...
-  
+  * `reg_res$summary$coeftest` for a coeftest object, to be used directly in stargazer  
   
 ## Benchmark
 
 I reproduced Matthieu's benchmark [here](./benchmark/benchmark.md)
 
+## Vignettes
+
+  * For standard estimation:   [FixedEffectModels.Rmd](./vignettes/FixedEffectModels.Rmd)
+  * For IV and Interactive FE: [OtherFEModels.Rmd](./vignettes/OtherFEModels.Rmd)
+
+
+
 
 ## To do
 
-- [ ] failsafe linear reg if no fe specified
-- [\] `FixedEffectIV` function
-- [ ] class lm output
-- [ ] Interactive fixed effect models from [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
-- [ ] implement with felm like formula
-- [x] standard errors in line with stata
-- [x] getfe option
+  * [-] `FixedEffectIV` function (see [vignette](./vignettes/OtherFEModels.Rmd))
+  * [-] Interactive fixed effect models from  [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
+ (see [vignette](./vignettes/OtherFEModels.Rmd))
+  * [ ] class lm output
+  * [ ] failsafe linear reg if no fe specified
+  * [ ] implement with felm like formula
+  * [x] standard errors in line with stata
+  * [x] getfe option
+
+
 
 
 ## Prerequisite:
 
-The package requires a working installation of julia (tested with 0.6.1)
+The package requires a working installation of julia (tested with 0.6.1).
 

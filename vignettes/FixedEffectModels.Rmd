@@ -21,7 +21,7 @@ JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
 FixedEffect_setup(JULIA_HOME)
 ```
  
-Run the standard example from `FixedEffedtModels.jl`
+Run the standard example from `FixedEffectModels.jl`
 
 ```{r, warning = F, error = F, message = F, eval= F}
 df <- Ecdat::Cigar

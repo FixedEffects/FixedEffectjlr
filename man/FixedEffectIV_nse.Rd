@@ -2,7 +2,7 @@
 % Please edit documentation in R/FixedEffectIV.R
 \name{FixedEffectIV_nse}
 \alias{FixedEffectIV_nse}
-\title{Use FixedEffectModels.jl to run large fixed effect models in julia}
+\title{Use FixedEffectModelsIV.jl to run large fixed effect models in julia}
 \usage{
 FixedEffectIV_nse(dt, formula, iv, fe = NULL, weights = NULL, vcov = NULL,
   save_res = FALSE, print = TRUE)
@@ -30,7 +30,7 @@ The return value will be a list which contains two elements at this point
   summary: includes information that is of importance to write a table
 }
 \description{
-\code{FixedEffect} returns the results of a linear fixed effect regression
+\code{FixedEffectIV_nse} returns the results of a 2 stage linear fixed effect regression
 }
 \examples{
 See vignettes and readme

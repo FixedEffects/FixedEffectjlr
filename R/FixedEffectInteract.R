@@ -1,44 +1,39 @@
 #' Use FixedEffectModelsIV.jl to run large fixed effect models in julia
 #'
-#' \code{FixedEffectIV_nse} returns the results of a 2 stage linear fixed effect regression
+#' \code{FixedEffectInteract_nse} returns the results of a 2 stage linear fixed effect regression
 #'
 #' @param dt        dataset of interest
-#' @param formula   formula of the y ~ x1 + x2 type
-#' @param iv        formula endogenous on exogenous variable
+#' @param lhs       String: lhs variable
+#' @param rhs       String: rhs variables
+#' @param ife       String of interacted fixed effects (id1 + id2)
+#' @param rank_ife  Integer: number of factors to be estimated
 #' @param fe        expression of fixed effects id1 + id2:id3
-#' @param vcov      error types, expression either robust or cluster(id1)
 #' @param weights   expression of weights
 #' @param vcov      Specification for the error
-#' @param save_res  Do we save the residuals
 #'
 #' @return The return value will be a list which contains two elements at this point
 #'   results: includes most of the observation from the julia call
 #'   summary: includes information that is of importance to write a table
 #'
 #' @examples See vignettes and readme
+#'   Short example
+#'   > df = Ecdat::Cigar
+#'   > FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
 #'
 #' @export
 #####################################################################################################################
-FixedEffectIV_nse <- function(
+FixedEffectInteract <- function(
   dt,
-  formula,
-  iv,
+  lhs,
+  rhs,
+  ife,
+  rank_ife,
   fe       = NULL,
   weights  = NULL,
   vcov     = NULL,
-  save_res = FALSE,    # do we save residuals and fixed effects
-  print    = TRUE
+  save_res = FALSE    # do we save residuals and fixed effects
+#  print    = TRUE
 ){
-
-  # Parse the formulas
-  lhs = as.character(formula[[2]])
-  rhs <- unlist(stringr::str_split(as.character(formula[[3]]), "\\+"))
-  rhs <- paste(gsub(" ", "", rhs)[stringr::str_length(rhs)>0], collapse = " + ")
-  fe  <- deparse(substitute(fe))
-  weights = deparse(substitute(weights))
-  if (weights == "NULL"){ weights = NULL }
-  vcov    = deparse(substitute(vcov))
-  if (vcov == "NULL"){ vcov = NULL }
 
   # parse the rhs, fe and cluster
   rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
@@ -49,6 +44,13 @@ FixedEffectIV_nse <- function(
   fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
   fe_split <- unique( stringr::str_replace_all(fe_split, " ", "") )
 
+  ife_split <- unlist( stringr::str_split(ife, "\\+") )
+  n_ife = length(ife_split)
+  ife_split <- unlist( stringr::str_split(ife_split, "\\:") )
+  ife_split <- unique( stringr::str_replace_all(ife_split, " ", "") )
+
+
+
   cluster_split <- gsub("cluster", "",
                         gsub("[()]", "",
                              gsub("robust", "", vcov) ) )
@@ -58,13 +60,8 @@ FixedEffectIV_nse <- function(
   # set the formula for julia
   julia_formula  = paste(lhs, "~", rhs)
 
-  # set the iv formula
-  endogenous_var = as.character(iv[[2]])
-  instrument_split = unlist(stringr::str_split(as.character(iv[[3]]), "\\+"))
-  instrument_split = gsub(" ", "", instrument_split)[stringr::str_length(instrument_split)>0]
-  instrument_var <- paste(instrument_split, collapse = " + ")
-  julia_iv = paste("(", endogenous_var, "~", instrument_var, ")")
-  julia_formula = paste(julia_formula, "+", julia_iv)
+  # set the ife
+  julia_ife = paste0("ife = ( ", ife, ", ", rank_ife, " )")
 
   # set the options
   julia_reg_fe   = paste("fe =", stringr::str_replace_all(fe, "\\:", "\\&"))
@@ -82,13 +79,13 @@ FixedEffectIV_nse <- function(
   julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_vcov, julia_reg_save),
                          collapse = ", ")
 
-  julia_regcall = paste("reg_res = reg(df_julia, @model(",
-                        paste(c(julia_formula, julia_reg_opt), collapse = ", "),
+
+  julia_regcall = paste("reg_res = regife(df_julia, @model(",
+                        paste(c(julia_formula, julia_ife, julia_reg_opt), collapse = ", "),
                         ") );")
 
   # move only the right amount of data into julia (faster)
-  col_keep = unique(intersect(names(dt),
-    c(lhs, rhs_split, endogenous_var, instrument_split, fe_split, cluster_split, weights)))
+  col_keep = intersect(names(dt), c(lhs, rhs_split, ife_split, fe_split, cluster_split, weights))
   dt <- data.table(dt)[, c(col_keep), with = F ]
   # fill NAs on lhs, sometimes object passed onto julia ends having NaN instead of missing
   for ( lhs_iter in seq(1, length(lhs)) ){
@@ -98,6 +95,13 @@ FixedEffectIV_nse <- function(
   dt_julia <- JuliaObject(dt)
   julia_assign("df_julia", dt_julia)
 
+  # create pooled fe variables in the dataset
+  for (iter in seq(1, length(ife_split))){
+    pool_cmd = paste0("df_julia[:", ife_split[iter], "]",
+                      " = categorical(df_julia[:",
+                      ife_split[iter], "]);")
+    julia_command(pool_cmd)
+  }
   # create pooled fe variables in the dataset
   for (iter in seq(1, length(fe_split))){
     pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
@@ -116,8 +120,11 @@ FixedEffectIV_nse <- function(
 
   # Run the regression
   julia_command(julia_regcall)
+
+  # output results (nothing saved yet)
   julia_command("reg_res")
 
 
-
 }
+
+

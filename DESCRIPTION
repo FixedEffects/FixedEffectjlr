@@ -18,10 +18,12 @@ Imports:
   data.table,
   purrr 
 Suggests: 
-  magrittr
+  magrittr,
+  lmtest
 SystemRequirements: 
   Julia (>= 0.6.0),
-  FixedEffectModels.jl
+  FixedEffectModels.jl,
+  InteractiveFixedEffectModels.jl,
   StatsModels.jl,
   Distributions.jl,
   DataFrames.jl

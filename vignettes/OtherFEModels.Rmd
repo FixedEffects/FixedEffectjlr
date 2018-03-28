@@ -1,0 +1,38 @@
+---
+title: "Other Fixed Effect Models using R and Julia's `FixedEffectModels`"
+author: "Erik Loualiche"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+#output:
+#  md_document:
+#    variant: markdown_github
+always_allow_html: yes
+vignette: >
+  %\VignetteIndexEntry{IV and Interactive fixed effect models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+First load the package
+
+```{r, results='hide', warning = F, error = F, message = F, eval= T}
+library(FixedEffectjlr)
+JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
+FixedEffect_setup(JULIA_HOME)
+```
+ 
+A silly example to illustrate the syntax:
+
+```{r, warning = F, error = F, message = F, eval= F}
+df <- Ecdat::Cigar
+FixedEffectIV_nse(df, sales ~ ndi, price ~ pimin, state+year, weights = NULL, vcov = robust)
+```
+
+
+And run the standard example from [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
+
+```{r, warning = F, error = F, message = F, eval= F}
+df <- Ecdat::Cigar
+FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
+```
+

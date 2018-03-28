@@ -2,6 +2,7 @@
 
 export(FixedEffect)
 export(FixedEffectIV_nse)
+export(FixedEffectInteract)
 export(FixedEffect_models)
 export(FixedEffect_nse)
 export(FixedEffect_setup)
