@@ -19,7 +19,8 @@ Imports:
   purrr 
 Suggests: 
   magrittr,
-  lmtest
+  lmtest,
+  testthat
 SystemRequirements: 
   Julia (>= 0.6.0),
   FixedEffectModels.jl,

@@ -28,13 +28,17 @@ FixedEffect <- function(dt,
                         print    = TRUE
 ){
 
-
   # parse the rhs, fe and cluster
+  rhs       <- stringr::str_replace_all(rhs, "\\:", "\\&")
   rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
+  rhs_split <- unlist( stringr::str_split(rhs_split, "\\&") )
+  rhs_split <- unlist( stringr::str_split(rhs_split, "\\*") )
   rhs_split <- unique( stringr::str_replace_all(rhs_split, " ", "") )
 
-  fe_split <- unlist( stringr::str_split(fe, "\\+") )
-  n_fe = length(fe_split)
+  fe_interact <- stringr::str_detect(fe, "\\*")       # check if there is an interaction term
+  fe_split    <- unlist( stringr::str_split(fe, "\\+") )
+  n_fe = length(fe_split)                             # usefule for getfe function in julia
+  fe_split <- unlist( stringr::str_split(fe_split, "\\*") )
   fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
   fe_split <- unique( stringr::str_replace_all(fe_split, " ", "") )
 
@@ -70,20 +74,28 @@ FixedEffect <- function(dt,
   # move only the right amount of data into julia (faster)
   col_keep = intersect(names(dt), c(lhs, rhs_split, fe_split, cluster_split, weights))
   dt <- data.table(dt)[, c(col_keep), with = F ]
+
+  # get the types of all the variables: important to define categoricals in julia
+  classes <- data.table(colclass = as.character(sapply(dt, class)) )
+  classes <- cbind(name = colnames(dt), classes)
+
   # fill NAs on lhs, sometimes object passed onto julia ends having NaN instead of missing
   for ( lhs_iter in seq(1, length(lhs)) ){
     dt[ !is.finite(get(lhs[lhs_iter])), c(lhs[lhs_iter]) := NA ]
-    # dt_tmp[ !is.finite(dt_tmp[[lhs[lhs_iter]]]), c(lhs[lhs_iter]) := NA ] # Alternative writing in data.table
   }
   dt_julia <- JuliaObject(dt)
   julia_assign("df_julia", dt_julia)
 
-  # create pooled fe variables in the dataset
+
+  # create pooled fe variables in the julia dataset
   for (iter in seq(1, length(fe_split))){
-    pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
-                      " = categorical(df_julia[:",
-                      fe_split[iter], "]);")
-    julia_command(pool_cmd)
+    # convert to categorical if no fe with continuous interaction
+    if (!fe_interact | (classes[ name == fe_split[iter]]$colclass == "factor")){
+      pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
+                        " = categorical(df_julia[:",
+                        fe_split[iter], "]);")
+      julia_command(pool_cmd)
+    }
   }
   if ( stringr::str_length(paste(cluster_split, collapse="")) > 0 ){
     for (iter in seq(1, length(cluster_split))){

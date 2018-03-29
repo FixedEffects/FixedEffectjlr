@@ -10,6 +10,7 @@ The package is very preliminary!
 
 Thanks to [Matthieu](https://github.com/matthieugomez) for writing `FixedEffectModels`!
 
+
 ## Usage
 
 Install the package directly from github
@@ -66,6 +67,7 @@ vcov = "cluster(industry + year)"
 weights = "pop"
 ```
 
+
 ## Output
 
 The functions prints out a table that is generated directly from julia. Moreover it collects information about the regressions and output two lists:
@@ -74,9 +76,11 @@ The functions prints out a table that is generated directly from julia. Moreover
   * `reg_res$summary` is most useful to create regression tables and keep regressors, standard errors, etc...
   * `reg_res$summary$coeftest` for a coeftest object, to be used directly in stargazer  
   
+  
 ## Benchmark
 
 I reproduced Matthieu's benchmark [here](./benchmark/benchmark.md)
+
 
 ## Vignettes
 
@@ -84,12 +88,10 @@ I reproduced Matthieu's benchmark [here](./benchmark/benchmark.md)
   * For IV and Interactive FE: [OtherFEModels.Rmd](./vignettes/OtherFEModels.Rmd)
 
 
-
-
 ## To do
 
-  * [-] `FixedEffectIV` function (see [vignette](./vignettes/OtherFEModels.Rmd))
-  * [-] Interactive fixed effect models from  [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
+  * [x] `FixedEffectIV` function (see [vignette](./vignettes/OtherFEModels.Rmd))
+  * [x] Interactive fixed effect models from  [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
  (see [vignette](./vignettes/OtherFEModels.Rmd))
   * [ ] class lm output
   * [ ] failsafe linear reg if no fe specified
@@ -98,9 +100,17 @@ I reproduced Matthieu's benchmark [here](./benchmark/benchmark.md)
   * [x] getfe option
 
 
-
-
 ## Prerequisite:
 
-The package requires a working installation of julia (tested with 0.6.1).
+The package requires a working installation of julia (tested with 0.6.2).
+
+
+## Thanks
+
+Thanks to Changcheng for developing [JuliaCall](https://github.com/Non-Contradiction/JuliaCall).
+
+Thanks to [Matthieu](https://github.com/matthieugomez) for all his packages!
+
+See other packages built on JuliaCall: [`convexjlr`](https://github.com/Non-Contradiction/convexjlr) and [`ipoptjlr`](https://github.com/Non-Contradiction/ipoptjlr).
+
 
