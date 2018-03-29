@@ -293,13 +293,14 @@ FixedEffect_models <- function(
   fe_split <- purrr::map_chr(unlist(fe_split), ~ stringr::str_replace_all(., " ", "") )
   fe_split <- unique(fe_split)
   fe_julia <- purrr::map(fe, ~ stringr::str_replace_all(., "\\:", "\\&") )
+  # get the cluster variables for categorical
   if (is.null(vcov)){  # default to robust
     vcov <- "robust"
   }
-  cluster_split <- data.table::data.table(vcov)[, .(cluster_split = gsub("robust", "", vcov)) ]
-  cluster_split[, cluster_split := gsub("cluster", "", gsub("[()]", "", cluster_split)) ]
-  cluster_split[, cluster_split := gsub(" ", "", stringr::str_split(cluster_split, "\\+")) ]
-  cluster_split <- cluster_split[stringr::str_length(cluster_split)>0]$cluster_split
+  cluster_split <- gsub("robust", "", vcov)
+  cluster_split <- gsub("[()]", "", gsub("cluster", "", cluster_split))
+  cluster_split <- gsub(" ", "", stringr::str_split(cluster_split, "\\+", simplify = T))
+  cluster_split <- as.vector(cluster_split)[ stringr::str_length(cluster_split)>0 ]
 
   #########################################################################
   # 2. move only the right amount of data into julia (faster)
@@ -357,7 +358,7 @@ FixedEffect_models <- function(
     r_final <- r_vcov
   }
 
-  julia_reg <- purrr::map(r_final, ~ paste("reg(df_julia, @model(", ., ") )") )
+  julia_reg <- purrr::map(r_final, ~ paste("reg(df_julia, @model(", ., ") );") )
   julia_reg <- paste0("reg_res", seq(1, length(julia_reg)), " = ", julia_reg)
   n_reg <- length(julia_reg)
   message("Running ... ", n_reg, " fixed effects regressions")
