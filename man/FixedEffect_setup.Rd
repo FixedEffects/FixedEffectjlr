@@ -14,7 +14,7 @@ FixedEffect_setup(...)
 }
 \examples{
 \dontrun{
-FixedEffect_setup()
+# FixedEffect_setup()
 }
 
 }

@@ -11,6 +11,7 @@
 #' @param weights   expression of weights
 #' @param vcov      Specification for the error
 #' @param save_res  Save the results of the model
+#' @param print     do we print output or not
 #'
 #' @return The return value will be a list which contains two elements at this point
 #'   results: includes most of the observation from the julia call
@@ -35,8 +36,8 @@ FixedEffectInteract <- function(
   fe       = NULL,
   weights  = NULL,
   vcov     = NULL,
-  save_res = FALSE    # do we save residuals and fixed effects
-#  print    = TRUE
+  save_res = FALSE,    # do we save residuals and fixed effects
+  print    = TRUE
 ){
 
   # parse the rhs, fe and cluster
@@ -126,8 +127,12 @@ FixedEffectInteract <- function(
   julia_command(julia_regcall)
 
   # output results (nothing saved yet)
-  julia_command("reg_res")
+  if (print == TRUE){
+    julia_command("reg_res")
+  }
 
+  jl_obj = julia_eval("reg_res")
+  return(jl_obj)
 
 }
 

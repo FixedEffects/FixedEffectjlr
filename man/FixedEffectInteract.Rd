@@ -5,7 +5,7 @@
 \title{Use FixedEffectModelsIV.jl to run large fixed effect models in julia}
 \usage{
 FixedEffectInteract(dt, lhs, rhs, ife, rank_ife, fe = NULL, weights = NULL,
-  vcov = NULL, save_res = FALSE)
+  vcov = NULL, save_res = FALSE, print = TRUE)
 }
 \arguments{
 \item{dt}{dataset of interest}
@@ -25,6 +25,8 @@ FixedEffectInteract(dt, lhs, rhs, ife, rank_ife, fe = NULL, weights = NULL,
 \item{vcov}{Specification for the error}
 
 \item{save_res}{Save the results of the model}
+
+\item{print}{do we print output or not}
 }
 \value{
 The return value will be a list which contains two elements at this point

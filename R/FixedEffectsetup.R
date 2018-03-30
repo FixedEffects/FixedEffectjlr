@@ -8,7 +8,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' FixedEffect_setup()
+#' # FixedEffect_setup()
 #' }
 #'
 #' @export
