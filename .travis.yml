@@ -6,7 +6,6 @@ os:
 cache: packages
 
 r_packages:
-  - Ecdat
 
 notifications:
   email: false
