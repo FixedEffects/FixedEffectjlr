@@ -15,7 +15,7 @@ vignette: >
 
 First load the package
 
-```{r, results='hide', warning = F, error = F, message = F, eval= T}
+```{r, results='hide', warning = F, error = F, message = F, eval= F}
 library(FixedEffectjlr)
 JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
 FixedEffect_setup(JULIA_HOME)
