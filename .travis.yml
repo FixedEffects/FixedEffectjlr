@@ -7,7 +7,6 @@ cache: packages
 
 r_packages:
   - Ecdat
-  - knitr
 
 notifications:
   email: false

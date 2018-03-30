@@ -21,7 +21,8 @@ Suggests:
   magrittr,
   lmtest,
   knitr,
-  testthat
+  testthat,
+  rmarkdown
 SystemRequirements: 
   Julia (>= 0.6.0),
   FixedEffectModels.jl,
