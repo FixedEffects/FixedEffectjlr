@@ -8,14 +8,15 @@
 #' @param fe        expression of fixed effects id1 + id2:id3
 #' @param vcov      error types, expression either robust or cluster(id1)
 #' @param weights   expression of weights
-#' @param vcov      Specification for the error
 #' @param save_res  Do we save the residuals
+#' @param print     Do we print the results (default is yes)
 #'
 #' @return The return value will be a list which contains two elements at this point
 #'   results: includes most of the observation from the julia call
 #'   summary: includes information that is of importance to write a table
 #'
-#' @examples See vignettes and readme
+#' @examples
+#'   # See vignettes and readme
 #'
 #' @export
 #####################################################################################################################
@@ -116,8 +117,10 @@ FixedEffectIV_nse <- function(
 
   # Run the regression
   julia_command(julia_regcall)
-  julia_command("reg_res")
 
+  if (print == T){
+    julia_command("reg_res")
+  }
 
 
 }

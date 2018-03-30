@@ -22,7 +22,7 @@ FixedEffectIV_nse(dt, formula, iv, fe = NULL, weights = NULL, vcov = NULL,
 
 \item{save_res}{Do we save the residuals}
 
-\item{vcov}{Specification for the error}
+\item{print}{Do we print the results (default is yes)}
 }
 \value{
 The return value will be a list which contains two elements at this point
@@ -33,6 +33,6 @@ The return value will be a list which contains two elements at this point
 \code{FixedEffectIV_nse} returns the results of a 2 stage linear fixed effect regression
 }
 \examples{
-See vignettes and readme
+  # See vignettes and readme
 
 }

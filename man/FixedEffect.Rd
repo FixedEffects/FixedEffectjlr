@@ -21,6 +21,8 @@ FixedEffect(dt, lhs, rhs, fe = NULL, weights = NULL, vcov = NULL,
 \item{vcov}{Specification for the error}
 
 \item{save_res}{Do we save the residuals}
+
+\item{print}{Do we save the results}
 }
 \value{
 The return value will be a list which contains two elements at this point
@@ -31,6 +33,6 @@ The return value will be a list which contains two elements at this point
 \code{FixedEffect} returns the results of a linear fixed effect regression
 }
 \examples{
-See vignettes and readme
+# See vignettes and readme
 
 }

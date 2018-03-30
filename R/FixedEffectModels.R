@@ -9,12 +9,14 @@
 #' @param weights   Regression weights
 #' @param vcov      Specification for the error
 #' @param save_res  Do we save the residuals
+#' @param print     Do we save the results
 #'
 #' @return The return value will be a list which contains two elements at this point
 #'   results: includes most of the observation from the julia call
 #'   summary: includes information that is of importance to write a table
 #'
-#' @examples See vignettes and readme
+#' @examples
+#' # See vignettes and readme
 #'
 #' @export
 #####################################################################################################################
@@ -204,20 +206,24 @@ FixedEffect <- function(dt,
 
 #' Use FixedEffectModels.jl to run large fixed effect models in julia on multiple models
 #'
-#' \code{FixedEffect_models} returns the results of a linear fixed effect regression
+#' \code{FixedEffect_nse} returns the results of a linear fixed effect regression
 #'
 #' @param dt        dataset of interest
 #' @param formula   formula of the y ~ x1 + x2 type
 #' @param fe        expression of fixed effects id1 + id2:id3
 #' @param weights   expression of weights
 #' @param vcov      error types, expression either robust or cluster(id1)
+#' @param ...       Variables that we pass by to FixedEffect function like print and save_res
 #'
 #' @return The return value will be a list which contains two elements at this point
 #'   results: includes most of the observation from the julia call
 #'   summary: includes information that is of importance to write a table
 #'
-#' @examples See vignettes and readme
+#' @examples
+#' # See vignettes and readme
+#' \dontrun{
 #'   FixedEffect_nse(y ~ x1 + x2, id1 + id2, cluster(id1), save = T)
+#' }
 #'
 #' @export
 #####################################################################################################################
@@ -268,21 +274,21 @@ FixedEffect_nse <- function(dt,
 #' @param fe        String, a vector of Fixed effects
 #' @param weights   Vector of regression weights (not yet coded)
 #' @param vcov      Vector of specification for the error
-#' @param save_res  Do we save the residuals (not yet coded)
 #'
 #' @return The return value will be a list which contains two elements at this point
 #'   results: includes most of the observation from the julia call
 #'   summary: includes information that is of importance to write a table
 #'
-#' @examples See vignettes and readme
-#'
+#' @examples
+#'   # See vignettes and readme
+#' \dontrun{
 #' lhs <- c("log_ewemt", "f1_log_ewemt")
 #' rhs <- c("MP + retail_index + retail_index_MP",
 #'         "MP + discount_rate + discount_rate_MP")
 #' fe  <- c("date_y",
 #'          "date_y:fed_district + quarter:fed_district + industry_code_num:quarter")
 #' vcov <- c("robust", "cluster(date_y)")
-#'
+#' }
 #' @export
 #####################################################################################################################
 FixedEffect_models <- function(

@@ -10,15 +10,19 @@
 #' @param fe        expression of fixed effects id1 + id2:id3
 #' @param weights   expression of weights
 #' @param vcov      Specification for the error
+#' @param save_res  Save the results of the model
 #'
 #' @return The return value will be a list which contains two elements at this point
 #'   results: includes most of the observation from the julia call
 #'   summary: includes information that is of importance to write a table
 #'
-#' @examples See vignettes and readme
-#'   Short example
-#'   > df = Ecdat::Cigar
-#'   > FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
+#' @examples
+#' # See vignettes and readme
+#' # Short example
+#' \dontrun{
+#'   df = Ecdat::Cigar
+#'   FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
+#' }
 #'
 #' @export
 #####################################################################################################################

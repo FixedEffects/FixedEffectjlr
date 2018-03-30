@@ -23,6 +23,8 @@ FixedEffectInteract(dt, lhs, rhs, ife, rank_ife, fe = NULL, weights = NULL,
 \item{weights}{expression of weights}
 
 \item{vcov}{Specification for the error}
+
+\item{save_res}{Save the results of the model}
 }
 \value{
 The return value will be a list which contains two elements at this point
@@ -33,9 +35,11 @@ The return value will be a list which contains two elements at this point
 \code{FixedEffectInteract_nse} returns the results of a 2 stage linear fixed effect regression
 }
 \examples{
-See vignettes and readme
-  Short example
-  > df = Ecdat::Cigar
-  > FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
+# See vignettes and readme
+# Short example
+\dontrun{
+  df = Ecdat::Cigar
+  FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
+}
 
 }

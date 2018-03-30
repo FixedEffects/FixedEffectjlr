@@ -1,10 +1,11 @@
 Package: FixedEffectjlr
 Type: Package
-Title: Fixed Effect Models in R
+Title: A package for fast Fixed Effect Models in R
 Version: 0.1.0
 Date: 2018-03-22
 Authors@R: person("Erik", "Loualiche", email = "eloualic@umn.edu", role = c("aut", "cre"))
-Description: Implements a R wrapper for FixedEffectModels julia package
+Description: Implements a R wrapper for FixedEffectModels julia package. 
+  This lies heavily on both the JuliaCall package and the tools developed by Matthieu Gomez.
 License: MIT + file LICENSE
 BugReports: https://github.com/eloualiche/FixedEffectjlr/issues
 Encoding: UTF-8

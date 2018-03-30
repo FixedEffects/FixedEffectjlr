@@ -18,8 +18,6 @@ FixedEffect_models(dt, lhs, rhs, fe = NULL, weights = NULL, vcov = NULL)
 \item{weights}{Vector of regression weights (not yet coded)}
 
 \item{vcov}{Vector of specification for the error}
-
-\item{save_res}{Do we save the residuals (not yet coded)}
 }
 \value{
 The return value will be a list which contains two elements at this point
@@ -30,13 +28,13 @@ The return value will be a list which contains two elements at this point
 \code{FixedEffect_models} returns the results of a linear fixed effect regression
 }
 \examples{
-See vignettes and readme
-
+  # See vignettes and readme
+\dontrun{
 lhs <- c("log_ewemt", "f1_log_ewemt")
 rhs <- c("MP + retail_index + retail_index_MP",
         "MP + discount_rate + discount_rate_MP")
 fe  <- c("date_y",
          "date_y:fed_district + quarter:fed_district + industry_code_num:quarter")
 vcov <- c("robust", "cluster(date_y)")
-
+}
 }

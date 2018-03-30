@@ -1,5 +1,6 @@
 context("Standard Linear Model")
 
+library(Ecdat)
 df = Ecdat::Cigar
 
 test_that("run the Linear Model example", {
