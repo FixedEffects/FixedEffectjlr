@@ -1,13 +1,10 @@
 context("Standard Linear Model")
 
-library(Ecdat)
-df = Ecdat::Cigar
-
 test_that("run the Linear Model example", {
   skip_on_cran()
 
-  # JULIA_HOME = "/Applications/Julia-0.6.app/Contents/Resources/julia/bin"
-  FixedEffect_setup()
+  JULIA_HOME = "/Applications/Julia-0.6.app/Contents/Resources/julia/bin"
+  FixedEffect_setup(JULIA_HOME)
 
   r <- FixedEffect_nse(df, sales~ndi, state+year, pop, cluster(state))
 
