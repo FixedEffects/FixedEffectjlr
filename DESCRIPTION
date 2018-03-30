@@ -20,6 +20,7 @@ Imports:
 Suggests: 
   magrittr,
   lmtest,
+  knitr,
   testthat
 SystemRequirements: 
   Julia (>= 0.6.0),
