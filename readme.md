@@ -1,6 +1,10 @@
 
 # R interface for Fixed Effect Models
 
+[![Build Status](https://travis-ci.org/eloualiche/FixedEffectjlr.svg?branch=master)](https://travis-ci.org/eloualiche/FixedEffectjlr)
+
+
+
 This package uses the [`FixedEffectModels`](https://github.com/matthieugomez/FixedEffectModels.jl) julia package to estimate large fixed effects models in R.
 
 It is a substitute for the [`felm`](https://cran.r-project.org/web/packages/lfe/index.html) R package that happens to not converge for simple datasets.
@@ -79,7 +83,7 @@ The functions prints out a table that is generated directly from julia. Moreover
   
 ## Benchmark
 
-I reproduced Matthieu's benchmark [here](./benchmark/benchmark.md)
+I reproduced Matthieu's benchmark [here](./vignettes/benchmark.md)
 
 
 ## Vignettes

@@ -32,3 +32,10 @@ before_install:
   - julia -e 'Pkg.add("Distributions")'
   - julia -e 'Pkg.add("DataFrames")'
   - julia -e 'using FixedEffectModels, InteractiveFixedEffectModels'
+
+r_packages:
+  - covr
+
+after_success:
+  - Rscript -e 'library(covr); codecov()'
+
