@@ -2,6 +2,7 @@
 # R interface for Fixed Effect Models
 
 [![Build Status](https://travis-ci.org/eloualiche/FixedEffectjlr.svg?branch=master)](https://travis-ci.org/eloualiche/FixedEffectjlr)
+[![codecov](https://codecov.io/gh/eloualiche/FixedEffectjlr/branch/master/graph/badge.svg)](https://codecov.io/gh/eloualiche/FixedEffectjlr)
 
 
 

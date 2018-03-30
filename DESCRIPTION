@@ -21,6 +21,7 @@ Imports:
 Suggests: 
   magrittr,
   lmtest,
+  stargazer,
   knitr,
   testthat,
   rmarkdown
