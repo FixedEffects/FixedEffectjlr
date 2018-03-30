@@ -4,6 +4,7 @@ Sys.setenv("R_TESTS" = "")
 library(testthat)
 library(FixedEffectjlr)
 
+library(data.table)
 df = fread("./Cigar.csv")
 
 test_check("FixedEffectjlr")
