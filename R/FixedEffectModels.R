@@ -399,13 +399,24 @@ FixedEffect_models <- function(
     list_tmp$coefficients = jl_coefficients
     list_tmp$julia_call = r_final[[reg_iter]]
     list_tmp$se = julia_eval(paste0("stderr(reg_res", reg_iter, ")"))
-    list_tmp$ci = julia_eval(paste0("confint(reg_res", reg_iter, ")"))
+    list_tmp$tt = julia_eval(paste0("coef(reg_res", reg_iter, ") ./ stderr(reg_res", reg_iter, ")"))
+    list_tmp$pvalues = julia_eval(paste0("coeftable(reg_res", reg_iter, ").mat[:,4]"))
+    list_tmp$ci      = julia_eval(paste0("confint(reg_res", reg_iter, ")"))
+    list_tmp$coefnms= julia_eval(paste0("coefnames(reg_res", reg_iter, ")"))
     list_tmp$nobs = julia_eval(paste0("reg_res", reg_iter, ".nobs"))   # number of observations
     list_tmp$r2    = list(r2 = julia_eval(paste0("reg_res", reg_iter, ".r2")),
                           r2_adjusted = julia_eval(paste0("reg_res", reg_iter, ".r2_a")),
                           r2_within = julia_eval(paste0("reg_res", reg_iter, ".r2_within")) )
     list_tmp$statistics = list(F_stat = julia_eval(paste0("reg_res", reg_iter, ".F")),
                                pvalue = julia_eval(paste0("reg_res", reg_iter, ".p")) )
+
+    # Coeftest class is easy: only need coefficients
+    Rcoef = matrix(c(jl_coefficients, list_tmp$se, list_tmp$tt, list_tmp$pvalues),
+                   nrow=length(list_tmp$coefnms), ncol=4, byrow = F)
+    colnames(Rcoef) = c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+    rownames(Rcoef) = list_tmp$coefnms
+    class(Rcoef) = "coeftest"
+    list_tmp$coeftest = Rcoef
 
     coef_list[[reg_iter]] <- list_tmp
     reg_list[[reg_iter]]  <- julia_eval(paste0("reg_res", reg_iter))

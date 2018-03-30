@@ -122,5 +122,7 @@ FixedEffectIV_nse <- function(
     julia_command("reg_res")
   }
 
+  jl_obj = julia_eval("reg_res")
+  return(jl_obj)
 
 }
