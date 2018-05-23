@@ -158,7 +158,7 @@ FixedEffect <- function(dt,
   z$convergence = list(julia_eval("reg_res.iterations"),
                        julia_eval("reg_res.converged"))
 
-  z$se = julia_eval("stderr(reg_res)")
+  z$se = julia_eval("stderror(reg_res)")
   z$ci = julia_eval("confint(reg_res)")
 
   if (save_res == TRUE){
@@ -178,8 +178,8 @@ FixedEffect <- function(dt,
   ct$ctitle   = julia_eval("title(reg_res)")
   ct$ctop     = julia_eval("top(reg_res)")
   ct$cc       = julia_eval("coef(reg_res)")             # coefficients
-  ct$se       = julia_eval("stderr(reg_res)")
-  ct$tt       = julia_eval("coef(reg_res) ./ stderr(reg_res)")
+  ct$se       = julia_eval("stderror(reg_res)")
+  ct$tt       = julia_eval("coef(reg_res) ./ stderror(reg_res)")
   ct$pvalues  = julia_eval("coeftable(reg_res).mat[:,4]")
   ct$coefnms  = julia_eval("coefnames(reg_res)")
   ct$conf_int = julia_eval("confint(reg_res)")
@@ -398,8 +398,8 @@ FixedEffect_models <- function(
     list_tmp$lhs =  julia_eval(paste0("reg_res", reg_iter, ".yname"))
     list_tmp$coefficients = jl_coefficients
     list_tmp$julia_call = r_final[[reg_iter]]
-    list_tmp$se = julia_eval(paste0("stderr(reg_res", reg_iter, ")"))
-    list_tmp$tt = julia_eval(paste0("coef(reg_res", reg_iter, ") ./ stderr(reg_res", reg_iter, ")"))
+    list_tmp$se = julia_eval(paste0("stderror(reg_res", reg_iter, ")"))
+    list_tmp$tt = julia_eval(paste0("coef(reg_res", reg_iter, ") ./ stderror(reg_res", reg_iter, ")"))
     list_tmp$pvalues = julia_eval(paste0("coeftable(reg_res", reg_iter, ").mat[:,4]"))
     list_tmp$ci      = julia_eval(paste0("confint(reg_res", reg_iter, ")"))
     list_tmp$coefnms= julia_eval(paste0("coefnames(reg_res", reg_iter, ")"))
