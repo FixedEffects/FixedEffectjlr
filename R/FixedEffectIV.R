@@ -60,14 +60,14 @@ FixedEffectIV_nse <- function(
   julia_formula  = paste(lhs, "~", rhs)
 
   # set the iv formula
-  endogenous_var =  unlist(stringr::str_split(as.character(iv[[2]]), "\\+"))
-  endogenous_var = gsub(" ", "", endogenous_var)[stringr::str_length(endogenous_var)>0]
-  endogenous_var = paste(endogenous_var, collapse = " + ")
+  endogenous_split =  unlist(stringr::str_split(as.character(iv[[2]]), "\\+"))
+  endogenous_split = gsub(" ", "", endogenous_split)[stringr::str_length(endogenous_split)>0]
+  endogenous_var   = paste(endogenous_split, collapse = " + ")
   instrument_split = unlist(stringr::str_split(as.character(iv[[3]]), "\\+"))
   instrument_split = gsub(" ", "", instrument_split)[stringr::str_length(instrument_split)>0]
-  instrument_var <- paste(instrument_split, collapse = " + ")
-  julia_iv = paste("(", endogenous_var, "~", instrument_var, ")")
-  julia_formula = paste(julia_formula, "+", julia_iv)
+  instrument_var   = paste(instrument_split, collapse = " + ")
+  julia_iv         = paste("(", endogenous_var, "~", instrument_var, ")")
+  julia_formula    = paste(julia_formula, "+", julia_iv)
 
   # set the options
   julia_reg_fe   = paste("fe =", stringr::str_replace_all(fe, "\\:", "\\&"))
@@ -90,8 +90,9 @@ FixedEffectIV_nse <- function(
                         ") );")
 
   # move only the right amount of data into julia (faster)
-  col_keep = unique(intersect(names(dt),
-    c(lhs, rhs_split, endogenous_var, instrument_split, fe_split, cluster_split, weights)))
+  col_keep = unique(intersect(
+    names(dt),
+    c(lhs, rhs_split, endogenous_split, instrument_split, fe_split, cluster_split, weights)))
   dt <- data.table(dt)[, c(col_keep), with = F ]
   # fill NAs on lhs, sometimes object passed onto julia ends having NaN instead of missing
   for ( lhs_iter in seq(1, length(lhs)) ){
@@ -120,11 +121,38 @@ FixedEffectIV_nse <- function(
   # Run the regression
   julia_command(julia_regcall)
 
+  # BUILD COEFFICIENT TABLE LIST
+  ct <- list()   # CoefTable2
+  julia_eval("jl_table = coeftable(reg_res);")
+  ct$ctitle   = julia_eval("title(reg_res)")
+  ct$ctop     = julia_eval("top(reg_res)")
+  ct$cc       = julia_eval("coef(reg_res)")             # coefficients
+  ct$se       = julia_eval("stderror(reg_res)")
+  ct$tt       = julia_eval("coef(reg_res) ./ stderror(reg_res)")
+  ct$pvalues  = julia_eval("coeftable(reg_res).mat[:,4]")
+  ct$coefnms  = julia_eval("coefnames(reg_res)")
+  ct$conf_int = julia_eval("confint(reg_res)")
+  ct$mat      = julia_eval("jl_table.mat")
+  ct$colnms   = julia_eval("jl_table.colnms")
+  ct$rownms   = julia_eval("jl_table.rownms")
+  ct$pvalcol  = julia_eval("jl_table.pvalcol")
+
+  # Coeftest class is easy: only need coefficients
+  Rcoef = matrix(c(ct$cc, ct$se, ct$tt, ct$pvalues),
+                 nrow=length(ct$coefnms), ncol=4, byrow = F)
+  colnames(Rcoef) = c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  rownames(Rcoef) = ct$coefnms
+  class(Rcoef) = "coeftest"
+  ct$coeftest = Rcoef
+
+  # OUTPUT
   if (print == T){
     julia_command("reg_res")
   }
 
+  # RETURN julia reg
   jl_obj = julia_eval("reg_res")
-  return(jl_obj)
+
+  return(list(results = jl_obj, summary = ct))
 
 }
