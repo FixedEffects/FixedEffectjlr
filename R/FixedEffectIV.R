@@ -60,7 +60,9 @@ FixedEffectIV_nse <- function(
   julia_formula  = paste(lhs, "~", rhs)
 
   # set the iv formula
-  endogenous_var = as.character(iv[[2]])
+  endogenous_var =  unlist(stringr::str_split(as.character(iv[[2]]), "\\+"))
+  endogenous_var = gsub(" ", "", endogenous_var)[stringr::str_length(endogenous_var)>0]
+  endogenous_var = paste(endogenous_var, collapse = " + ")
   instrument_split = unlist(stringr::str_split(as.character(iv[[3]]), "\\+"))
   instrument_split = gsub(" ", "", instrument_split)[stringr::str_length(instrument_split)>0]
   instrument_var <- paste(instrument_split, collapse = " + ")
