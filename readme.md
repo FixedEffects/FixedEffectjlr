@@ -8,7 +8,7 @@
 
 This package uses the [`FixedEffectModels`](https://github.com/matthieugomez/FixedEffectModels.jl) julia package to estimate large fixed effects models in R.
 
-It is a substitute for the [`felm`](https://cran.r-project.org/web/packages/lfe/index.html) R package that happens to not converge for simple datasets.
+It is a substitute to the [`felm`](https://cran.r-project.org/web/packages/lfe/index.html) R package. It is usually faster (see [benchmarks](./vignettes/benchmark.md)) and converges more robustly.
 This uses the [`JuliaCall`](https://github.com/Non-Contradiction/JuliaCall) library to pass datasets into julia and process them.
 
 The package is very preliminary!
@@ -81,10 +81,6 @@ The functions prints out a table that is generated directly from julia. Moreover
   * `reg_res$summary` is most useful to create regression tables and keep regressors, standard errors, etc...
   * `reg_res$summary$coeftest` for a coeftest object, to be used directly in stargazer  
   
-  
-## Benchmark
-
-I reproduced Matthieu's benchmark [here](./vignettes/benchmark.md)
 
 
 ## Vignettes
