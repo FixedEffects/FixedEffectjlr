@@ -12,7 +12,7 @@
 
 <meta name="author" content="Erik Loualiche" />
 
-<meta name="date" content="2018-03-24" />
+<meta name="date" content="2018-07-24" />
 
 <title>Fixed Effect Models using R and Julia’s FixedEffectModels</title>
 
@@ -22,7 +22,7 @@
 <style type="text/css">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; position: absolute; }
+a.sourceLine:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -35,13 +35,11 @@ code.sourceCode { white-space: pre-wrap; }
 a.sourceLine { text-indent: -1em; padding-left: 1em; }
 }
 pre.numberSource a.sourceLine
-  { position: relative; }
-pre.numberSource a.sourceLine:empty
-  { position: absolute; }
+  { position: relative; left: -4em; }
 pre.numberSource a.sourceLine::before
   { content: attr(data-line-number);
-    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all;
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -280,27 +278,39 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Fixed Effect Models using R and Julia’s <code>FixedEffectModels</code></h1>
 <h4 class="author"><em>Erik Loualiche</em></h4>
-<h4 class="date"><em>2018-03-24</em></h4>
+<h4 class="date"><em>2018-07-24</em></h4>
 
 
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(FixedEffectjlr)</a>
 <a class="sourceLine" id="cb1-2" data-line-number="2">JULIA_HOME &lt;-<span class="st"> &quot;/Applications/Julia-0.6.app/Contents/Resources/julia/bin/&quot;</span></a>
 <a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">FixedEffect_setup</span>(JULIA_HOME)</a></code></pre></div>
-<p>Run the standard example from <code>FixedEffedtModels.jl</code></p>
+<p>Run the standard example from <code>FixedEffectModels.jl</code></p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">df &lt;-<span class="st"> </span>Ecdat<span class="op">::</span>Cigar</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">reg_res &lt;-<span class="st"> </span><span class="kw">FixedEffect</span>(df,</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="dt">lhs =</span> <span class="st">&quot;sales&quot;</span>, <span class="dt">rhs =</span> <span class="st">&quot;ndi&quot;</span>,</a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="dt">fe      =</span> <span class="st">&quot;state + year&quot;</span>,</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">  <span class="dt">weights =</span> <span class="st">&quot;pop&quot;</span>,</a>
 <a class="sourceLine" id="cb2-6" data-line-number="6">  <span class="dt">vcov    =</span> <span class="st">&quot;cluster(state)&quot;</span>)</a></code></pre></div>
+<p>I tried to play with NSE, very much work in progress</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">reg_res &lt;-<span class="st"> </span><span class="kw">FixedEffect_nse</span>(df, sales<span class="op">~</span>ndi, state<span class="op">+</span>year, pop, <span class="kw">cluster</span>(state))</a></code></pre></div>
+<p>Waiting for a full <code>lm</code> object, I added a <code>coeftest</code> object so that it is possible to look at output with stargazer:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">df &lt;-<span class="st"> </span>Ecdat<span class="op">::</span>Cigar</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">reg1 &lt;-<span class="st"> </span><span class="kw">FixedEffect_nse</span>(df, sales<span class="op">~</span>ndi, state<span class="op">+</span>year, pop, robust)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">reg2 &lt;-<span class="st"> </span><span class="kw">FixedEffect_nse</span>(df, sales<span class="op">~</span>ndi, state<span class="op">+</span>year, pop, <span class="kw">cluster</span>(state))</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">reg3 &lt;-<span class="st"> </span><span class="kw">FixedEffect_nse</span>(df, sales<span class="op">~</span>ndi, state<span class="op">+</span>year, <span class="dt">vcov =</span> robust)</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">reg4 &lt;-<span class="st"> </span><span class="kw">FixedEffect_nse</span>(df, sales<span class="op">~</span>ndi, state<span class="op">+</span>year, <span class="dt">vcov =</span> <span class="kw">cluster</span>(state))</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">stargazer<span class="op">::</span><span class="kw">stargazer</span>(reg1<span class="op">$</span>summary<span class="op">$</span>coeftest, reg2<span class="op">$</span>summary<span class="op">$</span>coeftest,</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">                     reg3<span class="op">$</span>summary<span class="op">$</span>coeftest, reg4<span class="op">$</span>summary<span class="op">$</span>coeftest,</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">                     <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <p>Try different models and look at standard errors:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">df &lt;-<span class="st"> </span>Ecdat<span class="op">::</span>Cigar</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">reg_res &lt;-<span class="st"> </span><span class="kw">FixedEffect_models</span>(df,</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="dt">lhs =</span> <span class="st">&quot;sales&quot;</span>, <span class="dt">rhs =</span> <span class="st">&quot;ndi&quot;</span>,</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">  <span class="dt">fe      =</span> <span class="st">&quot;state + year&quot;</span>,</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">  <span class="dt">weights =</span> <span class="kw">c</span>(<span class="st">&quot;&quot;</span>, <span class="st">&quot;pop&quot;</span>),</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">  <span class="dt">vcov    =</span> <span class="kw">c</span>(<span class="st">&quot;robust&quot;</span>, <span class="st">&quot;cluster(state)&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">df &lt;-<span class="st"> </span>Ecdat<span class="op">::</span>Cigar</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">reg_res &lt;-<span class="st"> </span><span class="kw">FixedEffect_models</span>(</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  df,</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="dt">lhs =</span> <span class="st">&quot;sales&quot;</span>, <span class="dt">rhs =</span> <span class="st">&quot;ndi&quot;</span>,</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  <span class="dt">fe      =</span> <span class="st">&quot;state + year&quot;</span>,</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  <span class="dt">weights =</span> <span class="kw">c</span>(<span class="st">&quot;&quot;</span>, <span class="st">&quot;pop&quot;</span>),</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">  <span class="dt">vcov    =</span> <span class="kw">c</span>(<span class="st">&quot;robust&quot;</span>, <span class="st">&quot;cluster(state)&quot;</span>))</a></code></pre></div>
 
 
 

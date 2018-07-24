@@ -196,14 +196,16 @@ FixedEffect <- function(dt,
   class(Rcoef) = "coeftest"
   ct$coeftest = Rcoef
 
-  # ---------------------------------------------------------------------------------
+  # -------------------------------------------------------------
   return(list(results = z,
               summary = ct))
 
 
-}
+} # end of FixedEffect
+# ----------------------------------------------------------------------------------------------
 
 
+# ----------------------------------------------------------------------------------------------
 #' Use FixedEffectModels.jl to run large fixed effect models in julia on multiple models
 #'
 #' \code{FixedEffect_nse} returns the results of a linear fixed effect regression
@@ -254,16 +256,13 @@ FixedEffect_nse <- function(dt,
     vcov    = v,
     ...
   )
-}
+} # End of FixedEffect_nse
+# ----------------------------------------------------------------------------------------------
 
 
 
 
-
-
-
-
-
+# ----------------------------------------------------------------------------------------------
 #' Use FixedEffectModels.jl to run large fixed effect models in julia on multiple models
 #'
 #' \code{FixedEffect_models} returns the results of a linear fixed effect regression
@@ -329,7 +328,7 @@ FixedEffect_models <- function(
     dt[ !is.finite(get(lhs[lhs_iter])), c(lhs[lhs_iter]) := NA ]
     # dt_tmp[ !is.finite(dt_tmp[[lhs[lhs_iter]]]), c(lhs[lhs_iter]) := NA ] # Alternative writing in data.table
   }
-  # pass the data unto julia
+  # pass the data to julia
   dt_julia <- JuliaObject(dt)
   julia_assign("df_julia", dt_julia)
 
@@ -354,7 +353,7 @@ FixedEffect_models <- function(
   #########################################################################
   # 3. list of formulas
   r_prelim <- purrr::cross2(.x = lhs, .y = rhs)
-  r_prelim <-purrr::map2(.x = r_prelim, .y = purrr::map(r_prelim, ~ paste(.x[[2]], collapse = " + ")),
+  r_prelim <- purrr::map2(.x = r_prelim, .y = purrr::map(r_prelim, ~ paste(.x[[2]], collapse = " + ")),
                          ~ paste(.x[[1]], "~", .y))
   r_prelim
 
@@ -424,6 +423,8 @@ FixedEffect_models <- function(
   }
 
   # return both all of the regression and coefficient subset
-  return(list(coef = coef_list, julia_reg = reg_list))
+  return(list(statistics = coef_list,
+              julia_reg  = reg_list))
 
-}
+} # end of FixedEffect_models
+# ----------------------------------------------------------------------------------------------

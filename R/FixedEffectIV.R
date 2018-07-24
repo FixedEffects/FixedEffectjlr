@@ -153,6 +153,7 @@ FixedEffectIV_nse <- function(
   # RETURN julia reg
   jl_obj = julia_eval("reg_res")
 
-  return(list(results = jl_obj, summary = ct))
+  return(list(results = jl_obj,
+              summary = ct))
 
 }

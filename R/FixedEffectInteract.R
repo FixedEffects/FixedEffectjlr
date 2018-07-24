@@ -1,6 +1,6 @@
-#' Use FixedEffectModelsIV.jl to run large fixed effect models in julia
+#' Use InteractiveFixedEffectModels.jl to run large fixed effect models in julia
 #'
-#' \code{FixedEffectInteract_nse} returns the results of a 2 stage linear fixed effect regression
+#' \code{FixedEffectInteract} returns the results of a 2 stage linear fixed effect regression
 #'
 #' @param dt        dataset of interest
 #' @param lhs       String: lhs variable
@@ -36,11 +36,12 @@ FixedEffectInteract <- function(
   fe       = NULL,
   weights  = NULL,
   vcov     = NULL,
-  save_res = FALSE,    # do we save residuals and fixed effects
+  save_res = TRUE,    # do we save PCs, loadings and fixed effects
   print    = TRUE
 ){
 
   # parse the rhs, fe and cluster
+  if (is.null(rhs)){ rhs <- "0" }
   rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
   rhs_split <- unique( stringr::str_replace_all(rhs_split, " ", "") )
 
@@ -123,17 +124,71 @@ FixedEffectInteract <- function(
     }
   }
 
+
+  # ----------------------------
   # Run the regression
   julia_command(julia_regcall)
+  # ----------------------------
 
-  # output results (nothing saved yet)
-  if (print == TRUE){
-    julia_command("reg_res")
+
+  # ----------------------------
+   # return results in R: coefficient results if there is a rhs
+  if (rhs != "0"){
+
+    list_tmp <- list() # initialize result is a list
+
+    jl_coefficients    = julia_eval(paste0("reg_res.coef"))
+    names(jl_coefficients) = julia_eval(paste0("reg_res.coefnames"))
+    list_tmp$coefficients = jl_coefficients
+
+    list_tmp$lhs        = julia_eval(paste0("reg_res.yname"))
+    list_tmp$julia_call = julia_regcall
+    list_tmp$se         = julia_eval(paste0("stderror(reg_res)"))
+    list_tmp$tt         = julia_eval(paste0("coef(reg_res) ./ stderror(reg_res)"))
+    list_tmp$pvalues    = julia_eval(paste0("coeftable(reg_res).mat[:,4]"))
+    list_tmp$ci         = julia_eval(paste0("confint(reg_res)"))
+    list_tmp$coefnms    = julia_eval(paste0("coefnames(reg_res)"))
+    list_tmp$nobs       = julia_eval(paste0("reg_res.nobs"))   # number of observations
+    list_tmp$r2         = list(r2          = julia_eval(paste0("reg_res.r2")),
+                               r2_adjusted = julia_eval(paste0("reg_res.r2_a")),
+                               r2_within   = julia_eval(paste0("reg_res.r2_within")) )
+    list_tmp$statistics = list(F_stat = NA,
+                               pvalue = list_tmp$pvalues)
+
+    # Coeftest class is easy: only need coefficients
+    Rcoef = matrix(c(jl_coefficients, list_tmp$se, list_tmp$tt, list_tmp$pvalues),
+                   nrow=length(list_tmp$coefnms), ncol=4, byrow = F)
+    colnames(Rcoef) = c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+    rownames(Rcoef) = list_tmp$coefnms
+    class(Rcoef) = "coeftest"
+    list_tmp$coeftest = Rcoef
+    coef_list <- list_tmp
+
   }
 
-  jl_obj = julia_eval("reg_res")
-  return(jl_obj)
+  # output dataset (that keeps loading and PCs)
+  augment <- julia_eval("getfield(reg_res, :augmentdf)")
+  setDT(augment)
 
-}
+  # ----------------------------
+  # output results (nothing saved yet)
+  if (print == TRUE){
+    reg_list  <- julia_eval(paste0("reg_res"))
+    message(reg_list)
+  }
 
+  # ----------------------------
+  # return both all of the regression and coefficient subset
+  if (rhs != "0"){
+    return(list(statistics = coef_list,
+                summary    = coef_list$coeftest,
+                dt_augment = augment     # NB empty is save_res = FALSE
+           ))
+  } else if (rhs == "0"){
+    return(list(dt_augment = augment))
+  }
+
+
+} # end of FixedEffectInteract
+# ----------------------------------------------------------------------------------------------
 
