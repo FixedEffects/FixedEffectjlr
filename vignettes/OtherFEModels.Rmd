@@ -41,7 +41,7 @@ The output is a list with three components:
   - `summary` that mimicks a `coeftest` object and can be used inside of stargazer
   - `dt_augment` that includes the residuals and factor loadings (it saves the PCs by default for this function)
 
-````{r, warning = F, error = F, message = F, eval= F}
+```{r, warning = F, error = F, message = F, eval= F}
 R> ife <- FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
 R> str(ife$statistics)
 R> stargazer::stargazer(ife$summary)
