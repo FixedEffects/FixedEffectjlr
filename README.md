@@ -8,9 +8,7 @@
 
 This package uses the [`FixedEffectModels.jl`](https://github.com/matthieugomez/FixedEffectModels.jl) julia package and the [JuliaCall](https://github.com/Non-Contradiction/JuliaCall) R library to estimate large fixed effects models in R.
 
-It is a substitute to the [`felm`](https://cran.r-project.org/web/packages/lfe/index.html) R package. It is usually faster (see [benchmarks](./vignettes/benchmark.md)) and converges more robustly.
-This uses the [`JuliaCall`](https://github.com/Non-Contradiction/JuliaCall) library to pass datasets into julia and process them.
-
+It is a substitute to the [`felm`](https://cran.r-project.org/web/packages/lfe/index.html) R package. It is usually faster (see [benchmarks](./vignettes/benchmark.md). I find it also to be more robust to actually converge. I use the [`JuliaCall`](https://github.com/Non-Contradiction/JuliaCall) library to pass datasets into julia and process them using the `FixedEffectModels.jl` and  `InteractiveFixedEffectModels.jl` libraries.
 The package is very preliminary, so please use it and let me know if you run into issues!
 
 [Thanks](#thanks) to Matthieu and Changcheng.
@@ -23,8 +21,7 @@ Install the package directly from github
 devtools::install_github("eloualiche/FixedEffectjlr")
 ```
 
-First setup julia to work within R with `JuliaCall`
-
+To actually use the package in `R`, first setup julia to work within R with `JuliaCall` (see more details about setting up on the [package webpage](https://github.com/Non-Contradiction/JuliaCall))
 ```r
 library(FixedEffectjlr)
 JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"

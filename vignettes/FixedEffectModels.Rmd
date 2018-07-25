@@ -15,7 +15,7 @@ vignette: >
 
 
 
-```{r, results='hide', warning = F, error = F, message = F, eval= F}
+```r
 library(FixedEffectjlr)
 JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
 FixedEffect_setup(JULIA_HOME)
@@ -23,7 +23,7 @@ FixedEffect_setup(JULIA_HOME)
  
 Run the standard example from `FixedEffectModels.jl`
 
-```{r, warning = F, error = F, message = F, eval= F}
+```r
 df <- Ecdat::Cigar
 reg_res <- FixedEffect(df,
   lhs = "sales", rhs = "ndi",
@@ -33,12 +33,12 @@ reg_res <- FixedEffect(df,
 ```
 
 I tried to play with NSE, very much work in progress
-```{r, warning = F, error = F, message = F, eval= F}
+```r
 reg_res <- FixedEffect_nse(df, sales~ndi, state+year, pop, cluster(state))
 ```
 
 Waiting for a full `lm` object, I added a `coeftest` object so that it is possible to look at output with stargazer:
-```{r, warning = F, error = F, message = F, eval= F}
+```r
 df <- Ecdat::Cigar
 reg1 <- FixedEffect_nse(df, sales~ndi, state+year, pop, robust)
 reg2 <- FixedEffect_nse(df, sales~ndi, state+year, pop, cluster(state))
@@ -50,7 +50,7 @@ stargazer::stargazer(reg1$summary$coeftest, reg2$summary$coeftest,
 ```
 
 Try different models and look at standard errors:
-```{r, warning = F, error = F, message = T, eval= F}
+```r
 df <- Ecdat::Cigar
 reg_res <- FixedEffect_models(
   df,

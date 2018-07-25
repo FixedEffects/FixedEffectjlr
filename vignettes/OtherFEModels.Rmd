@@ -15,7 +15,7 @@ vignette: >
 
 First load the package
 
-```{r, results='hide', warning = F, error = F, message = F, eval= F}
+```r
 library(FixedEffectjlr)
 JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
 FixedEffect_setup(JULIA_HOME)
@@ -23,7 +23,7 @@ FixedEffect_setup(JULIA_HOME)
  
 A silly example to illustrate the syntax:
 
-```{r, warning = F, error = F, message = F, eval= F}
+```r
 df <- Ecdat::Cigar
 FixedEffectIV_nse(df, sales ~ ndi, price ~ pimin, state+year, weights = NULL, vcov = robust)
 ```
@@ -31,7 +31,7 @@ FixedEffectIV_nse(df, sales ~ ndi, price ~ pimin, state+year, weights = NULL, vc
 
 And run the standard example from [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
 
-```{r, warning = F, error = F, message = F, eval= F}
+```r
 df <- Ecdat::Cigar
 FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
 ```
@@ -41,11 +41,12 @@ The output is a list with three components:
   - `summary` that mimicks a `coeftest` object and can be used inside of stargazer
   - `dt_augment` that includes the residuals and factor loadings (it saves the PCs by default for this function)
 
-```{r, warning = F, error = F, message = F, eval= F}
-R> ife <- FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
-R> str(ife$statistics)
-R> stargazer::stargazer(ife$summary)
-R> ife$dt_augment
+```r
+ife <- FixedEffectInteract(df, "sales", "price", "state+year", 2, "state", vcov = "robust")
+str(ife$statistics)
+stargazer::stargazer(ife$summary)
+ife$dt_augment[]
+
       loadings1   factors1 loadings2   factors2   residuals    state
    1:  123.4569 -0.2474458  17.67403 0.27993746  -5.2228250 136.8897
    2:  123.4569 -0.2646732  17.67403 0.22784788  -0.1649076 136.8897
@@ -58,4 +59,5 @@ R> ife$dt_augment
 1378:   55.5659  0.2031630 -43.31349 0.19880231 -13.5040138 162.8116
 1379:   55.5659  0.2218755 -43.31349 0.21521906  -2.6961542 162.8116
 1380:   55.5659  0.2861259 -43.31349 0.25092751   8.9333349 162.8116
+
 ```
