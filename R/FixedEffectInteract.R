@@ -45,6 +45,7 @@ FixedEffectInteract <- function(
   rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
   rhs_split <- unique( stringr::str_replace_all(rhs_split, " ", "") )
 
+  if (is.null(fe)){ fe <- "0" }
   fe_split <- unlist( stringr::str_split(fe, "\\+") )
   n_fe = length(fe_split)
   fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
@@ -93,10 +94,10 @@ FixedEffectInteract <- function(
   julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_vcov, julia_reg_save),
                          collapse = ", ")
 
-
   julia_regcall = paste("reg_res = regife(df_julia, @model(",
                         paste(c(julia_formula, julia_ife, julia_reg_opt), collapse = ", "),
                         ") );")
+  julia_regcall <- gsub(", ,", ",", julia_regcall) # clean up because of missing instructions (e.g. when no fe are specified)
 
   # move only the right amount of data into julia (faster)
   col_keep = intersect(names(dt), c(lhs, rhs_split, ife_split, fe_split, cluster_split, weights))
@@ -116,13 +117,16 @@ FixedEffectInteract <- function(
                       ife_split[iter], "]);")
     julia_command(pool_cmd)
   }
-  # create pooled fe variables in the dataset
-  for (iter in seq(1, length(fe_split))){
-    pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
-                      " = categorical(df_julia[:",
-                      fe_split[iter], "]);")
-    julia_command(pool_cmd)
+  # create pooled fe variables in the dataset (if there is something to do)
+  if (!is.null(fe)){
+    for (iter in seq(1, length(fe_split))){
+      pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
+                        " = categorical(df_julia[:",
+                        fe_split[iter], "]);")
+      julia_command(pool_cmd)
+    }
   }
+  # and clustering variables
   if ( stringr::str_length(paste(cluster_split, collapse="")) > 0 ){
     for (iter in seq(1, length(cluster_split))){
       pool_cmd = paste0("df_julia[:", cluster_split[iter], "]",
@@ -178,7 +182,9 @@ FixedEffectInteract <- function(
   # output dataset (that keeps loading and PCs)
   augment <- julia_eval("getfield(reg_res, :augmentdf)")
   setDT(augment)
-  setnames(augment, fe_split, paste0("p", fe_split))
+  if (!is.null(fe)){
+    setnames(augment, fe_split, paste0("p", fe_split))
+  }
 
   # ----------------------------
   # output results (nothing saved yet)
