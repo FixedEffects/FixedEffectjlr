@@ -6,14 +6,14 @@
 
 
 
-This package uses the [`FixedEffectModels`](https://github.com/matthieugomez/FixedEffectModels.jl) julia package to estimate large fixed effects models in R.
+This package uses the [`FixedEffectModels.jl`](https://github.com/matthieugomez/FixedEffectModels.jl) julia package and the [JuliaCall](https://github.com/Non-Contradiction/JuliaCall) R library to estimate large fixed effects models in R.
 
 It is a substitute to the [`felm`](https://cran.r-project.org/web/packages/lfe/index.html) R package. It is usually faster (see [benchmarks](./vignettes/benchmark.md)) and converges more robustly.
 This uses the [`JuliaCall`](https://github.com/Non-Contradiction/JuliaCall) library to pass datasets into julia and process them.
 
-The package is very preliminary!
+The package is very preliminary, so please use it and let me know if you run into issues!
 
-Thanks to [Matthieu](https://github.com/matthieugomez) for writing `FixedEffectModels`!
+[Thanks](#thanks) to Matthieu and Changcheng.
 
 
 ## Usage
@@ -88,25 +88,12 @@ The functions prints out a table that is generated directly from julia. Moreover
   * For standard estimation:   [FixedEffectModels.Rmd](./vignettes/FixedEffectModels.Rmd)
   * For IV and Interactive FE: [OtherFEModels.Rmd](./vignettes/OtherFEModels.Rmd)
 
-
-## To do
-
-  * [x] `FixedEffectIV` function (see [vignette](./vignettes/OtherFEModels.Rmd))
-  * [x] Interactive fixed effect models from  [`InteractiveFixedEffectModels.jl`](https://github.com/matthieugomez/InteractiveFixedEffectModels.jl)
- (see [vignette](./vignettes/OtherFEModels.Rmd))
-  * [ ] class lm output
-  * [ ] failsafe linear reg if no fe specified
-  * [ ] implement with felm like formula
-  * [x] standard errors in line with stata
-  * [x] getfe option
-
-
 ## Prerequisite:
 
-The package requires a working installation of julia (tested with 0.6.2).
+The package requires a working installation of julia (last tested with julia 0.6.4)
 
 
-## Thanks
+## <a name = "thanks">Thanks</a>
 
 Thanks to Changcheng for developing [JuliaCall](https://github.com/Non-Contradiction/JuliaCall).
 

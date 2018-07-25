@@ -66,20 +66,28 @@ FixedEffectInteract <- function(
   # set the formula for julia
   julia_formula  = paste(lhs, "~", rhs)
 
-  # set the ife
+  # set the julia_ife
   julia_ife = paste0("ife = ( ", ife, ", ", rank_ife, " )")
 
-  # set the options
-  julia_reg_fe   = paste("fe =", stringr::str_replace_all(fe, "\\:", "\\&"))
+  # set the julia_reg_fe
+  if (fe == "0"){ fe <- NULL }
+  if (!is.null(fe)){
+    julia_reg_fe   = paste("fe =", stringr::str_replace_all(fe, "\\:", "\\&"))
+  } else if (is.null(fe)){
+    julia_reg_fe = ""
+  }
+  # set the weights
   if (!is.null(weights)){
     if (stringr::str_length(weights)>0){
       julia_reg_fe   = paste(julia_reg_fe, ", weights =", weights)
     } }
+  # set vcov
   if (is.null(vcov)){  # default to robust
     vcov <- "robust"
   } else if (!stringr::str_detect(vcov, "cluster")) {
     vcov <- "robust"
   }
+
   julia_reg_vcov = paste("vcov = ", vcov)
   julia_reg_save = paste("save = ", ifelse(save_res, "true", "false"))
   julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_vcov, julia_reg_save),
@@ -132,11 +140,12 @@ FixedEffectInteract <- function(
 
 
   # ----------------------------
-   # return results in R: coefficient results if there is a rhs
+  # return results in R: coefficient results if there is a rhs
+
+  list_tmp <- list() # initialize result is a list
+  list_tmp$julia_call = julia_regcall
+
   if (rhs != "0"){
-
-    list_tmp <- list() # initialize result is a list
-
     jl_coefficients    = julia_eval(paste0("reg_res.coef"))
     names(jl_coefficients) = julia_eval(paste0("reg_res.coefnames"))
     list_tmp$coefficients = jl_coefficients
@@ -162,13 +171,14 @@ FixedEffectInteract <- function(
     rownames(Rcoef) = list_tmp$coefnms
     class(Rcoef) = "coeftest"
     list_tmp$coeftest = Rcoef
-    coef_list <- list_tmp
-
   }
+
+  coef_list <- list_tmp
 
   # output dataset (that keeps loading and PCs)
   augment <- julia_eval("getfield(reg_res, :augmentdf)")
   setDT(augment)
+  setnames(augment, fe_split, paste0("p", fe_split))
 
   # ----------------------------
   # output results (nothing saved yet)
@@ -185,7 +195,8 @@ FixedEffectInteract <- function(
                 dt_augment = augment     # NB empty is save_res = FALSE
            ))
   } else if (rhs == "0"){
-    return(list(dt_augment = augment))
+    return(list(statistics = coef_list,
+                dt_augment = augment))
   }
 
 
