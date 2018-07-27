@@ -40,6 +40,8 @@ FixedEffectInteract <- function(
   print    = TRUE
 ){
 
+  setDT(dt)
+
   # parse the rhs, fe and cluster
   if (is.null(rhs)){ rhs <- "0" }
   rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
@@ -55,8 +57,6 @@ FixedEffectInteract <- function(
   n_ife = length(ife_split)
   ife_split <- unlist( stringr::str_split(ife_split, "\\:") )
   ife_split <- unique( stringr::str_replace_all(ife_split, " ", "") )
-
-
 
   cluster_split <- gsub("cluster", "",
                         gsub("[()]", "",
@@ -185,6 +185,7 @@ FixedEffectInteract <- function(
   if (!is.null(fe)){
     setnames(augment, fe_split, paste0("p", fe_split))
   }
+  augment <- cbind(dt[, ife_split, with=F], augment)
 
   # ----------------------------
   # output results (nothing saved yet)

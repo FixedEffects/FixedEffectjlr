@@ -78,12 +78,12 @@ The functions prints out a table that is generated directly from julia. Moreover
   * `reg_res$summary` is most useful to create regression tables and keep regressors, standard errors, etc...
   * `reg_res$summary$coeftest` for a coeftest object, to be used directly in stargazer  
   
-
-
+  
 ## Vignettes
 
   * For standard estimation:   [FixedEffectModels.Rmd](./vignettes/FixedEffectModels.Rmd)
   * For IV and Interactive FE: [OtherFEModels.Rmd](./vignettes/OtherFEModels.Rmd)
+  * An example that uses Interactive Fixed Effect Model to derive Principal Components: [IFE_PCA_ex.Rmd](./vignettes/IFE_PCA_ex.Rmd)
 
 ## Prerequisite:
 

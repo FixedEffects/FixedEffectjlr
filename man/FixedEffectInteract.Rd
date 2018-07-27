@@ -2,10 +2,10 @@
 % Please edit documentation in R/FixedEffectInteract.R
 \name{FixedEffectInteract}
 \alias{FixedEffectInteract}
-\title{Use FixedEffectModelsIV.jl to run large fixed effect models in julia}
+\title{Use InteractiveFixedEffectModels.jl to run large fixed effect models in julia}
 \usage{
 FixedEffectInteract(dt, lhs, rhs, ife, rank_ife, fe = NULL, weights = NULL,
-  vcov = NULL, save_res = FALSE, print = TRUE)
+  vcov = NULL, save_res = TRUE, print = TRUE)
 }
 \arguments{
 \item{dt}{dataset of interest}
@@ -34,7 +34,7 @@ The return value will be a list which contains two elements at this point
   summary: includes information that is of importance to write a table
 }
 \description{
-\code{FixedEffectInteract_nse} returns the results of a 2 stage linear fixed effect regression
+\code{FixedEffectInteract} returns the results of a 2 stage linear fixed effect regression
 }
 \examples{
 # See vignettes and readme
