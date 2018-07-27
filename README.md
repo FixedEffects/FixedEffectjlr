@@ -81,9 +81,9 @@ The functions prints out a table that is generated directly from julia. Moreover
   
 ## Vignettes
 
-  * For standard estimation:   [FixedEffectModels.Rmd](./vignettes/FixedEffectModels.Rmd)
-  * For IV and Interactive FE: [OtherFEModels.Rmd](./vignettes/OtherFEModels.Rmd)
-  * An example that uses Interactive Fixed Effect Model to derive Principal Components: [IFE_PCA_ex.Rmd](./vignettes/IFE_PCA_ex.Rmd)
+  * For standard estimation:    [FixedEffectModels.Rmd](./vignettes/FixedEffectModels.Rmd)
+  * For IV and Interactive FE:  [OtherFEModels.Rmd](./vignettes/OtherFEModels.Rmd)
+  * A practical example of IFE: [IFE_PCA_ex.Rmd](./vignettes/IFE_PCA_ex.md)
 
 ## Prerequisite:
 
