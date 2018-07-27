@@ -2,10 +2,9 @@
 title: "Principal Component Analysis with Interactive Fixed Effect Model"
 author: "Erik Loualiche"
 date: "`r Sys.Date()`"
-output:
-  md_document:
-    variant: markdown_github
-  rmarkdown::html_vignette:
+output: rmarkdown::html_vignette
+  # md_document:
+    # variant: markdown_github
 always_allow_html: yes
 vignette: >
   %\VignetteIndexEntry{IFE and PCA}

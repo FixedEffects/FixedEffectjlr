@@ -1,4 +1,4 @@
-## ---- eval=TRUE, message=F, warnings=F, highlight=TRUE, cache=T, results='hide'----
+## ---- eval=TRUE, message=F, warnings=F, highlight=TRUE, cache=F, results='hide'----
 library(magrittr); library(dplyr);
 library(data.table)
 library(FixedEffectjlr)

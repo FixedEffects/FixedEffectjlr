@@ -3,19 +3,18 @@ title: "Principal Component Analysis with Interactive Fixed Effect Model"
 author: "Erik Loualiche"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
-#output:
-#  md_document:
-#    variant: markdown_github
+  # md_document:
+    # variant: markdown_github
 always_allow_html: yes
 vignette: >
-  %\VignetteIndexEntry{IV and Interactive fixed effect models}
+  %\VignetteIndexEntry{IFE and PCA}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 First load the package
 
-```{r, eval=TRUE, message=F, warnings=F, highlight=TRUE, cache=T, results='hide'}
+```{r, eval=TRUE, message=F, warnings=F, highlight=TRUE, cache=F, results='hide'}
 library(magrittr); library(dplyr);
 library(data.table)
 library(FixedEffectjlr)
