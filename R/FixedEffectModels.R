@@ -9,7 +9,8 @@
 #' @param weights   Regression weights
 #' @param vcov      Specification for the error
 #' @param save_res  Do we save the residuals
-#' @param print     Do we save the results
+#' @param print     Do we print the results
+#' @param verbose   Do we print status report on what's going on
 #'
 #' @return The return value will be a list which contains two elements at this point
 #'   results: includes most of the observation from the julia call
@@ -27,7 +28,8 @@ FixedEffect <- function(dt,
                         weights  = NULL,
                         vcov     = NULL,
                         save_res = FALSE,    # do we save residuals and fixed effects
-                        print    = TRUE
+                        print    = TRUE,
+                        verbose  = FALSE
 ){
 
   # parse the rhs, fe and cluster
@@ -37,18 +39,23 @@ FixedEffect <- function(dt,
   rhs_split <- unlist( stringr::str_split(rhs_split, "\\*") )
   rhs_split <- unique( stringr::str_replace_all(rhs_split, " ", "") )
 
-  fe_interact <- stringr::str_detect(fe, "\\*")       # check if there is an interaction term
+  # N.B. on interaction term: do make sure variables have right type already in R!
+  fe_interact <- stringr::str_detect(fe, "\\*") | stringr::str_detect(fe, "\\:")   # check if there is an interaction term
   fe_split    <- unlist( stringr::str_split(fe, "\\+") )
   n_fe = length(fe_split)                             # usefule for getfe function in julia
   fe_split <- unlist( stringr::str_split(fe_split, "\\*") )
   fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
   fe_split <- unique( stringr::str_replace_all(fe_split, " ", "") )
 
-  cluster_split <- gsub("cluster", "",
-                     gsub("[()]", "",
-                       gsub("robust", "", vcov) ) )
-  cluster_split <- gsub(" ", "",
-                     unlist( stringr::str_split(cluster_split, "\\+") ) )
+  # split all the clustering variables
+  cluster_split <- NULL
+  if (!is.null(vcov)){
+    cluster_split <- gsub("cluster", "",
+                       gsub("[()]", "",
+                         gsub("robust", "", vcov) ) )
+    cluster_split <- gsub(" ", "",
+                       unlist( stringr::str_split(cluster_split, "\\+") ) )
+  }
 
   # set the formula for julia
   julia_formula  = paste(lhs, "~", rhs)
@@ -85,6 +92,23 @@ FixedEffect <- function(dt,
   for ( lhs_iter in seq(1, length(lhs)) ){
     dt[ !is.finite(get(lhs[lhs_iter])), c(lhs[lhs_iter]) := NA ]
   }
+  # for rhs too
+  for ( rhs_iter in seq(1, length(rhs)) ){
+    if (classes[ name == rhs[rhs_iter] ][["colclass"]] %in% c("numeric", "integer") ){
+      dt[ !is.finite(get(rhs[rhs_iter])), c(rhs[rhs_iter]) := NA ]
+    }
+  }
+ # for continuous variables remove the NaN
+ for ( fe_iter in seq(1, length(fe_split))){
+   if (classes[ name == fe_split[fe_iter]][["colclass"]] %in% c("numeric", "integer") ){
+     dt[ !is.finite(get(fe_split[fe_iter])),  c(fe_split[fe_iter]) := NA ]
+     if (verbose == T & (nrow(dt[ !is.finite(get(fe_split[fe_iter] ))])>0) ) {
+       message("# removing NA for continuous fe variable ... ", fe_split[fe_iter])
+     }
+   }
+ }
+
+  # send the R data.table to julia
   dt_julia <- JuliaObject(dt)
   julia_assign("df_julia", dt_julia)
 
@@ -93,6 +117,7 @@ FixedEffect <- function(dt,
   for (iter in seq(1, length(fe_split))){
     # convert to categorical if no fe with continuous interaction
     if (!fe_interact | (classes[ name == fe_split[iter]]$colclass == "factor")){
+      if (verbose == T){ message("# converting ", fe_split[iter], " to categorical variable") }
       pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
                         " = categorical(df_julia[:",
                         fe_split[iter], "]);")
@@ -101,6 +126,7 @@ FixedEffect <- function(dt,
   }
   if ( stringr::str_length(paste(cluster_split, collapse="")) > 0 ){
     for (iter in seq(1, length(cluster_split))){
+      if (verbose == T){ message("# converting ", fe_split[iter], " to categorical variable") }
       pool_cmd = paste0("df_julia[:", cluster_split[iter], "]",
                         " = categorical(df_julia[:",
                         cluster_split[iter], "]);")
@@ -109,6 +135,11 @@ FixedEffect <- function(dt,
   }
 
   # Run the regression
+  if (verbose == T){
+    message("# running regression in FixedEffectModels.jl\n",
+            "# julia call is ...\n",
+            julia_regcall)
+  }
   julia_command(julia_regcall)
 
   # Return some useful information "close to lm"
