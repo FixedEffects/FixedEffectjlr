@@ -5,7 +5,7 @@
 \title{Use FixedEffectModels.jl to run large fixed effect models in julia}
 \usage{
 FixedEffect(dt, lhs, rhs, fe = NULL, weights = NULL, vcov = NULL,
-  save_res = FALSE, print = TRUE)
+  save_res = FALSE, print = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{dt}{dataset of interest}
@@ -22,7 +22,9 @@ FixedEffect(dt, lhs, rhs, fe = NULL, weights = NULL, vcov = NULL,
 
 \item{save_res}{Do we save the residuals}
 
-\item{print}{Do we save the results}
+\item{print}{Do we print the results}
+
+\item{verbose}{Do we print status report on what's going on}
 }
 \value{
 The return value will be a list which contains two elements at this point
