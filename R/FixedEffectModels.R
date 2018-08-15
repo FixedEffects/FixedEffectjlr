@@ -94,8 +94,10 @@ FixedEffect <- function(dt,
   }
   # for rhs too
   for ( rhs_iter in seq(1, length(rhs_split)) ){
-    if (classes[ name == rhs_split[rhs_iter] ][["colclass"]] %in% c("numeric", "integer") ){
-      dt[ !is.finite(get(rhs_split[rhs_iter])), c(rhs_split[rhs_iter]) := NA ]
+    if (rhs_split != "1"){
+      if (classes[ name == rhs_split[rhs_iter] ][["colclass"]] %in% c("numeric", "integer") ){
+       dt[ !is.finite(get(rhs_split[rhs_iter])), c(rhs_split[rhs_iter]) := NA ]
+      }
     }
   }
  # for continuous variables remove the NaN
