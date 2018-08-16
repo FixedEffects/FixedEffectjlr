@@ -94,7 +94,7 @@ FixedEffect <- function(dt,
   }
   # for rhs too
   for ( rhs_iter in seq(1, length(rhs_split)) ){
-    if (rhs_split != "1"){
+    if (as.logical( sum(rhs_split != "1") ) ){
       if (classes[ name == rhs_split[rhs_iter] ][["colclass"]] %in% c("numeric", "integer") ){
        dt[ !is.finite(get(rhs_split[rhs_iter])), c(rhs_split[rhs_iter]) := NA ]
       }
