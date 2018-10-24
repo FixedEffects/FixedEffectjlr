@@ -32,6 +32,6 @@ SystemRequirements:
   StatsModels.jl,
   Distributions.jl,
   DataFrames.jl
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
 VignetteBuilder: knitr
 URL: https://github.com/eloualiche/FixedEffectjlr

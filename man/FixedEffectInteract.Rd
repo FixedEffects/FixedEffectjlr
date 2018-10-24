@@ -4,8 +4,8 @@
 \alias{FixedEffectInteract}
 \title{Use InteractiveFixedEffectModels.jl to run large fixed effect models in julia}
 \usage{
-FixedEffectInteract(dt, lhs, rhs, ife, rank_ife, fe = NULL, weights = NULL,
-  vcov = NULL, save_res = TRUE, print = TRUE)
+FixedEffectInteract(dt, lhs, rhs, ife, rank_ife, fe = NULL,
+  weights = NULL, vcov = NULL, save_res = TRUE, print = TRUE)
 }
 \arguments{
 \item{dt}{dataset of interest}

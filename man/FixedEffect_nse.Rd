@@ -4,7 +4,8 @@
 \alias{FixedEffect_nse}
 \title{Use FixedEffectModels.jl to run large fixed effect models in julia on multiple models}
 \usage{
-FixedEffect_nse(dt, formula, fe = NULL, weights = NULL, vcov = NULL, ...)
+FixedEffect_nse(dt, formula, fe = NULL, weights = NULL, vcov = NULL,
+  ...)
 }
 \arguments{
 \item{dt}{dataset of interest}

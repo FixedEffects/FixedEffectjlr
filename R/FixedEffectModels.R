@@ -157,12 +157,12 @@ FixedEffect <- function(dt,
   }
   # effects
   ## z$effects = c(NA)
-  z$rank = julia_eval("reg_res.nobs - reg_res.df_residual")
+  z$rank = julia_eval("reg_res.nobs - reg_res.dof_residual")
   # assign
   ## z$assign = c(NA)
   # qr
   ## z$qr = c(NA)
-  jl_df.residual = julia_eval("reg_res.df_residual")
+  jl_df.residual = julia_eval("reg_res.dof_residual")  # change in FixedEffectModels interface from df_residual to dof_residual
   z$df.residual  = jl_df.residual
   # xlevels
   ## z$xlevels <- list()

@@ -4,7 +4,8 @@
 \alias{FixedEffect_models}
 \title{Use FixedEffectModels.jl to run large fixed effect models in julia on multiple models}
 \usage{
-FixedEffect_models(dt, lhs, rhs, fe = NULL, weights = NULL, vcov = NULL)
+FixedEffect_models(dt, lhs, rhs, fe = NULL, weights = NULL,
+  vcov = NULL)
 }
 \arguments{
 \item{dt}{dataset of interest}

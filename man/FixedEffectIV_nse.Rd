@@ -4,8 +4,8 @@
 \alias{FixedEffectIV_nse}
 \title{Use FixedEffectModelsIV.jl to run large fixed effect models in julia}
 \usage{
-FixedEffectIV_nse(dt, formula, iv, fe = NULL, weights = NULL, vcov = NULL,
-  save_res = FALSE, print = TRUE)
+FixedEffectIV_nse(dt, formula, iv, fe = NULL, weights = NULL,
+  vcov = NULL, save_res = FALSE, print = TRUE)
 }
 \arguments{
 \item{dt}{dataset of interest}
