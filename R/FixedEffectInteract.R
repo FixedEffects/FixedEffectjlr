@@ -163,7 +163,7 @@ FixedEffectInteract <- function(
     list_tmp$coefnms    = julia_eval(paste0("coefnames(reg_res)"))
     list_tmp$nobs       = julia_eval(paste0("reg_res.nobs"))   # number of observations
     list_tmp$r2         = list(r2          = julia_eval(paste0("reg_res.r2")),
-                               r2_adjusted = julia_eval(paste0("reg_res.r2_a")),
+                               r2_adjusted = julia_eval(paste0("reg_res.adjr2")),
                                r2_within   = julia_eval(paste0("reg_res.r2_within")) )
     list_tmp$statistics = list(F_stat = NA,
                                pvalue = list_tmp$pvalues)

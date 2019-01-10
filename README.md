@@ -24,7 +24,7 @@ devtools::install_github("eloualiche/FixedEffectjlr")
 To actually use the package in `R`, first setup julia to work within R with `JuliaCall` (see more details about setting up on the [package webpage](https://github.com/Non-Contradiction/JuliaCall))
 ```r
 library(FixedEffectjlr)
-JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
+JULIA_HOME <- "/Applications/Julia-1.0.app/Contents/Resources/julia/bin/"
 FixedEffect_setup(JULIA_HOME)
 ```
 
@@ -87,7 +87,7 @@ The functions prints out a table that is generated directly from julia. Moreover
 
 ## Prerequisite:
 
-The package requires a working installation of julia (last tested with julia 0.6.4)
+The package requires a working installation of julia (last tested with julia 1.0.3)
 
 
 ## <a name = "thanks">Thanks</a>

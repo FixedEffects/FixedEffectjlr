@@ -183,7 +183,7 @@ FixedEffect <- function(dt,
   z$nobs = julia_eval("reg_res.nobs")   # number of observations
 
   z$r2    = list(r2 = julia_eval("reg_res.r2"),
-                 r2_adjusted = julia_eval("reg_res.r2_a"),
+                 r2_adjusted = julia_eval("reg_res.adjr2"),
                  r2_within = julia_eval("reg_res.r2_within"))
   z$statistics = list(F_stat = julia_eval("reg_res.F"),
                       pvalue = julia_eval("reg_res.p"))
@@ -437,7 +437,7 @@ FixedEffect_models <- function(
     list_tmp$coefnms= julia_eval(paste0("coefnames(reg_res", reg_iter, ")"))
     list_tmp$nobs = julia_eval(paste0("reg_res", reg_iter, ".nobs"))   # number of observations
     list_tmp$r2    = list(r2 = julia_eval(paste0("reg_res", reg_iter, ".r2")),
-                          r2_adjusted = julia_eval(paste0("reg_res", reg_iter, ".r2_a")),
+                          r2_adjusted = julia_eval(paste0("reg_res", reg_iter, ".adjr2")),
                           r2_within = julia_eval(paste0("reg_res", reg_iter, ".r2_within")) )
     list_tmp$statistics = list(F_stat = julia_eval(paste0("reg_res", reg_iter, ".F")),
                                pvalue = julia_eval(paste0("reg_res", reg_iter, ".p")) )

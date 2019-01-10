@@ -17,7 +17,7 @@ vignette: >
 
 ```r
 library(FixedEffectjlr)
-JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
+# JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
 JULIA_HOME <- "/Applications/Julia-1.0.app/Contents/Resources/julia/bin/"
 FixedEffect_setup(JULIA_HOME)
 ```
