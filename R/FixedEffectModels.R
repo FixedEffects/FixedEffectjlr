@@ -42,10 +42,11 @@ FixedEffect <- function(dt,
   # N.B. on interaction term: do make sure variables have right type already in R!
   fe_interact <- stringr::str_detect(fe, "\\*") | stringr::str_detect(fe, "\\:")   # check if there is an interaction term
   fe_split    <- unlist( stringr::str_split(fe, "\\+") )
-  n_fe = length(fe_split)                             # usefule for getfe function in julia
+  n_fe = length(fe_split)                             # useful for getfe function in julia
   fe_split <- unlist( stringr::str_split(fe_split, "\\*") )
   fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
   fe_split <- unique( stringr::str_replace_all(fe_split, " ", "") )
+  fe_split <- fe_split[ which(fe_split != "") ]
 
   # split all the clustering variables
   cluster_split <- NULL
