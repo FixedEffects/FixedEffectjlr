@@ -77,7 +77,7 @@ FixedEffect <- function(dt,
   julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_vcov, julia_reg_save),
                          collapse = ", ")
 
-  julia_regcall = paste("reg_res = reg(df_julia, @model(",
+  julia_regcall = paste("reg_fe(x) = reg(df_julia, @model(",
                         paste(c(julia_formula, julia_reg_opt), collapse = ", "),
                         ") );")
 
@@ -141,94 +141,126 @@ FixedEffect <- function(dt,
   if (verbose == T){
     message("# running regression in FixedEffectModels.jl\n",
             "# julia call is ...\n",
-            julia_regcall)
+            paste("reg(df_julia, @model(",
+                  paste(c(julia_formula, julia_reg_opt), collapse = ", "),
+                  ") );"))
   }
-  julia_command(julia_regcall)
+  julia_command(julia_regcall) # function that executes the regression
+  # now catch errors with try/catch in julia
+  julia_command("
+reg_fe_error = function(x)
+    try
+        reg_fe(x);
+    catch
+        0;
+    end
+end;")
+  # run the regression with error catching
+  julia_command("reg_res = reg_fe_error(1);")
+  # check if regression worked
+  julia_command("
+reg_fe_test = function(x)
+    try
+        x.coef[1];
+    catch
+        1im
+    end
+end;")
+  # making the failed regression imaginary is the best I found (couldn't move missing to NA)
+  reg_test <- julia_eval("reg_fe_test(reg_res)")
+  reg_test <- !is.complex(reg_test)  # boolean if regression did go through
 
   # Return some useful information "close to lm"
   z <- list()
 
-  # coefficients
-  jl_coefficients    = julia_eval("reg_res.coef")
-  names(jl_coefficients) = julia_eval("reg_res.coefnames")
-  z$coefficients = jl_coefficients
-  if (save_res == TRUE){
-    z$residuals = julia_eval("reg_res.augmentdf[:residuals]")
-    z$fitted.values = julia_eval(paste0("df_julia[:", lhs, "] - reg_res.augmentdf[:residuals]"))
+  if (reg_test == T){
+    # coefficients
+    jl_coefficients    = julia_eval("reg_res.coef")
+    names(jl_coefficients) = julia_eval("reg_res.coefnames")
+    z$coefficients = jl_coefficients
+    if (save_res == TRUE){
+      z$residuals = julia_eval("reg_res.augmentdf[:residuals]")
+      z$fitted.values = julia_eval(paste0("df_julia[:", lhs, "] - reg_res.augmentdf[:residuals]"))
+    }
+    # effects
+    ## z$effects = c(NA)
+    z$rank = julia_eval("reg_res.nobs - reg_res.dof_residual")
+    # assign
+    ## z$assign = c(NA)
+    # qr
+    ## z$qr = c(NA)
+    jl_df.residual = julia_eval("reg_res.dof_residual")  # change in FixedEffectModels interface from df_residual to dof_residual
+    z$df.residual  = jl_df.residual
+    # xlevels
+    ## z$xlevels <- list()
+    ## names(z$xlevels) <- c()
+
+    if (stringr::str_detect(vcov, "cluster")){
+      cluster_formula <- gsub("cluster", "",
+                              gsub("[()]", "", vcov) )
+    } else {
+      cluster_formula <- "0"
+    }
+    R_call = paste(julia_formula, "|", fe, "| 0 |", cluster_formula)
+    z$call = list(R_call = as.formula(R_call), julia_call = julia_regcall)
+    # terms
+    z$terms = terms(as.formula(R_call))
+
+    # other stuff
+    z$nobs = julia_eval("reg_res.nobs")   # number of observations
+
+    z$r2    = list(r2 = julia_eval("reg_res.r2"),
+                   r2_adjusted = julia_eval("reg_res.adjr2"),
+                   r2_within = julia_eval("reg_res.r2_within"))
+    z$statistics = list(F_stat = julia_eval("reg_res.F"),
+                        pvalue = julia_eval("reg_res.p"))
+
+    z$convergence = list(julia_eval("reg_res.iterations"),
+                         julia_eval("reg_res.converged"))
+
+    z$se = julia_eval("stderror(reg_res)")
+    z$ci = julia_eval("confint(reg_res)")
+
+    if (save_res == TRUE){
+      z$fe = julia_eval(paste0("reg_res.augmentdf[:, 2:", n_fe+1, "]"))
+    }
+
+    class(z) <- 'lm'
+
+    # Return something else close to summary
+    if (print == TRUE){
+      julia_eval("show(reg_res);")
+    }
+
+    # BUILD COEFFICIENT TABLE LIST
+    ct <- list()   # CoefTable2
+    julia_eval("jl_table = coeftable(reg_res);")
+    ct$ctitle   = julia_eval("title(reg_res)")
+    ct$ctop     = julia_eval("top(reg_res)")
+    ct$cc       = julia_eval("coef(reg_res)")             # coefficients
+    ct$se       = julia_eval("stderror(reg_res)")
+    ct$tt       = julia_eval("coef(reg_res) ./ stderror(reg_res)")
+    ct$pvalues  = julia_eval("coeftable(reg_res).mat[:,4]")
+    ct$coefnms  = julia_eval("coefnames(reg_res)")
+    ct$conf_int = julia_eval("confint(reg_res)")
+    ct$mat      = julia_eval("jl_table.mat")
+    ct$colnms   = julia_eval("jl_table.colnms")
+    ct$rownms   = julia_eval("jl_table.rownms")
+    ct$pvalcol  = julia_eval("jl_table.pvalcol")
+
+    # Coeftest class is easy: only need coefficients
+    Rcoef = matrix(c(ct$cc, ct$se, ct$tt, ct$pvalues),
+                   nrow=length(ct$coefnms), ncol=4, byrow = F)
+    colnames(Rcoef) = c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+    rownames(Rcoef) = ct$coefnms
+    class(Rcoef) = "coeftest"
+    ct$coeftest = Rcoef
+
+  } else if (reg_test == F){
+    warning("# FE regression failed (see julia for more details)")
+    z  = NA
+    ct = NA
   }
-  # effects
-  ## z$effects = c(NA)
-  z$rank = julia_eval("reg_res.nobs - reg_res.dof_residual")
-  # assign
-  ## z$assign = c(NA)
-  # qr
-  ## z$qr = c(NA)
-  jl_df.residual = julia_eval("reg_res.dof_residual")  # change in FixedEffectModels interface from df_residual to dof_residual
-  z$df.residual  = jl_df.residual
-  # xlevels
-  ## z$xlevels <- list()
-  ## names(z$xlevels) <- c()
-
-  if (stringr::str_detect(vcov, "cluster")){
-    cluster_formula <- gsub("cluster", "",
-                         gsub("[()]", "", vcov) )
-  } else {
-    cluster_formula <- "0"
-  }
-  R_call = paste(julia_formula, "|", fe, "| 0 |", cluster_formula)
-  z$call = list(R_call = as.formula(R_call), julia_call = julia_regcall)
-  # terms
-  z$terms = terms(as.formula(R_call))
-
-  # other stuff
-  z$nobs = julia_eval("reg_res.nobs")   # number of observations
-
-  z$r2    = list(r2 = julia_eval("reg_res.r2"),
-                 r2_adjusted = julia_eval("reg_res.adjr2"),
-                 r2_within = julia_eval("reg_res.r2_within"))
-  z$statistics = list(F_stat = julia_eval("reg_res.F"),
-                      pvalue = julia_eval("reg_res.p"))
-
-  z$convergence = list(julia_eval("reg_res.iterations"),
-                       julia_eval("reg_res.converged"))
-
-  z$se = julia_eval("stderror(reg_res)")
-  z$ci = julia_eval("confint(reg_res)")
-
-  if (save_res == TRUE){
-    z$fe = julia_eval(paste0("reg_res.augmentdf[:, 2:", n_fe+1, "]"))
-  }
-
-  class(z) <- 'lm'
-
-  # Return somthing else close to summary
-  if (print == TRUE){
-    julia_eval("show(reg_res);")
-  }
-
-  # BUILD COEFFICIENT TABLE LIST
-  ct <- list()   # CoefTable2
-  julia_eval("jl_table = coeftable(reg_res);")
-  ct$ctitle   = julia_eval("title(reg_res)")
-  ct$ctop     = julia_eval("top(reg_res)")
-  ct$cc       = julia_eval("coef(reg_res)")             # coefficients
-  ct$se       = julia_eval("stderror(reg_res)")
-  ct$tt       = julia_eval("coef(reg_res) ./ stderror(reg_res)")
-  ct$pvalues  = julia_eval("coeftable(reg_res).mat[:,4]")
-  ct$coefnms  = julia_eval("coefnames(reg_res)")
-  ct$conf_int = julia_eval("confint(reg_res)")
-  ct$mat      = julia_eval("jl_table.mat")
-  ct$colnms   = julia_eval("jl_table.colnms")
-  ct$rownms   = julia_eval("jl_table.rownms")
-  ct$pvalcol  = julia_eval("jl_table.pvalcol")
-
-  # Coeftest class is easy: only need coefficients
-  Rcoef = matrix(c(ct$cc, ct$se, ct$tt, ct$pvalues),
-                 nrow=length(ct$coefnms), ncol=4, byrow = F)
-  colnames(Rcoef) = c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
-  rownames(Rcoef) = ct$coefnms
-  class(Rcoef) = "coeftest"
-  ct$coeftest = Rcoef
 
   # -------------------------------------------------------------
   return(list(results = z,
