@@ -258,8 +258,8 @@ end;")
 
   } else if (reg_test == F){
     warning("# FE regression failed (see julia for more details)")
-    z  = NA
-    ct = NA
+    z  = NULL
+    ct = NULL
   }
 
   # -------------------------------------------------------------
