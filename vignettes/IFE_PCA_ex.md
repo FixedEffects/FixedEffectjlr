@@ -1,10 +1,10 @@
 First load the package
 
 ``` r
-library(magrittr); library(dplyr);
+library(dplyr);
 library(data.table)
 library(FixedEffectjlr)
-JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
+JULIA_HOME <- "/Applications/Julia-1.1.app/Contents/Resources/julia/bin/"
 FixedEffect_setup(JULIA_HOME)
 ```
 
