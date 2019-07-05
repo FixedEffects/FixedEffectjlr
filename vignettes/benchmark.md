@@ -50,6 +50,15 @@ felm(y ~ x1 + x2|(id1 + id2), df)
 felm(y ~ x1 + x2|(id1 + id2)|0|id1+id2, df)
 ```
 
+Then using `glmhdfe`
+
+```r
+glmhdfe(y ~ x1 + x2|id1, df)
+glmhdfe(y ~ x1 + x2|id1|0|id1, df)
+glmhdfe(y ~ x1 + x2|(id1 + id2), df)
+glmhdfe(y ~ x1 + x2|(id1 + id2)|0|id1+id2, df)
+```
+
 And using `FixedEffedtjlr`
 
 ```r

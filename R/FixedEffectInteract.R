@@ -147,7 +147,7 @@ FixedEffectInteract <- function(
   # return results in R: coefficient results if there is a rhs
 
   list_tmp <- list() # initialize result is a list
-  list_tmp$julia_call = julia_regcall
+  list_tmp$julia_call = julia_regcall;
 
   if (rhs != "0"){
     jl_coefficients    = julia_eval(paste0("reg_res.coef"))
@@ -163,7 +163,7 @@ FixedEffectInteract <- function(
     list_tmp$coefnms    = julia_eval(paste0("coefnames(reg_res)"))
     list_tmp$nobs       = julia_eval(paste0("reg_res.nobs"))   # number of observations
     list_tmp$r2         = list(r2          = julia_eval(paste0("reg_res.r2")),
-                               r2_adjusted = julia_eval(paste0("reg_res.adjr2")),
+                               r2_adjusted = julia_eval(paste0("reg_res.r2_a")),
                                r2_within   = julia_eval(paste0("reg_res.r2_within")) )
     list_tmp$statistics = list(F_stat = NA,
                                pvalue = list_tmp$pvalues)
@@ -180,7 +180,7 @@ FixedEffectInteract <- function(
   coef_list <- list_tmp
 
   # output dataset (that keeps loading and PCs)
-  augment <- julia_eval("getfield(reg_res, :augmentdf)")
+  augment <- julia_eval("getfield(reg_res, :augmentdf);")
   setDT(augment)
   if (!is.null(fe)){
     setnames(augment, fe_split, paste0("p", fe_split))
@@ -190,7 +190,7 @@ FixedEffectInteract <- function(
   # ----------------------------
   # output results (nothing saved yet)
   if (print == TRUE){
-    reg_list  <- julia_eval(paste0("reg_res"))
+    reg_list  <- julia_eval(paste0("reg_res;"))
     message(reg_list)
   }
 
