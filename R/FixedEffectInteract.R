@@ -145,11 +145,31 @@ FixedEffectInteract <- function(
 
 
   # ----------------------------
-  if (print==TRUE){
+    # Managing exceptions in julia
+  julia_regcall_exception = gsub("reg_res = ", "", julia_regcall)
+  julia_regcall_exception = paste0("reg_res = try ", julia_regcall_exception, "catch;  (augmentdf=0, coefnames=0) end;")
+  julia_regcall = julia_regcall_exception
+  # ----------------------------
+
+  # ----------------------------
+    if (print==TRUE){
     message(julia_regcall)
   }
   # Run the regression
   julia_command(julia_regcall)
+  # ----------------------------
+
+  # ----------------------------
+    # BRANCH OUT IF REGRESSION FAILS
+  augment <- julia_eval("getfield(reg_res, :augmentdf);")
+  results <- nrow(as.matrix(augment))
+  if (results <= 1){
+    if (print==TRUE){
+      message("IFE regression has failed\n")
+    }
+    return(list(statistics = NA,
+                dt_augment = NA))
+  }
   # ----------------------------
 
   # ----------------------------
@@ -186,9 +206,8 @@ FixedEffectInteract <- function(
   }
 
   coef_list <- list_tmp
-
   # output dataset (that keeps loading and PCs)
-  augment <- julia_eval("getfield(reg_res, :augmentdf);")
+  # augment <- julia_eval("getfield(reg_res, :augmentdf);")
   setDT(augment)
   if (!is.null(fe)){
     setnames(augment, fe_split, paste0("p", fe_split))
