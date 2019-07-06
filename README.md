@@ -24,7 +24,7 @@ devtools::install_github("eloualiche/FixedEffectjlr")
 To actually use the package in `R`, first setup julia to work within R with `JuliaCall` (see more details about setting up on the [package webpage](https://github.com/Non-Contradiction/JuliaCall))
 ```r
 library(FixedEffectjlr)
-JULIA_HOME <- "/Applications/Julia-1.0.app/Contents/Resources/julia/bin/"
+JULIA_HOME <- "/Applications/Julia-1.1.app/Contents/Resources/julia/bin/"
 FixedEffect_setup(JULIA_HOME)
 ```
 

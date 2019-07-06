@@ -99,15 +99,22 @@ FixedEffectInteract <- function(
                         ") );")
   julia_regcall <- gsub(", ,", ",", julia_regcall) # clean up because of missing instructions (e.g. when no fe are specified)
 
+  # ---------------------------------
+  # SPECIFY THE DATASET FOR REGRESSION
   # move only the right amount of data into julia (faster)
   col_keep = intersect(names(dt), c(lhs, rhs_split, ife_split, fe_split, cluster_split, weights))
   dt <- data.table(dt)[, c(col_keep), with = F ]
-  # fill NAs on lhs, sometimes object passed onto julia ends having NaN instead of missing
+  # fill NAs on lhs, sometimes object passed onto julia have NaN instead of missing
   for ( lhs_iter in seq(1, length(lhs)) ){
     dt[ !is.finite(get(lhs[lhs_iter])), c(lhs[lhs_iter]) := NA ]
     # dt_tmp[ !is.finite(dt_tmp[[lhs[lhs_iter]]]), c(lhs[lhs_iter]) := NA ] # Alternative writing in data.table
   }
-  julia_assign("df_julia", dt)
+  dt[, temporary_id_key := seq(1, .N) ]  # create an id to recognize rows later on
+  dt_missing <- dt[, lapply(.SD, as.numeric) ]
+  dt_missing <- dt_missing[, .(missing_tag = is.na(rowSums(.SD)), temporary_id_key) ]
+  dt_reg <- dt[!dt_missing[missing_tag==T], on = c("temporary_id_key")]
+
+  julia_assign("df_julia", dt_reg)
 
 
   # create pooled fe variables in the dataset
@@ -138,14 +145,15 @@ FixedEffectInteract <- function(
 
 
   # ----------------------------
+  if (print==TRUE){
+    message(julia_regcall)
+  }
   # Run the regression
   julia_command(julia_regcall)
   # ----------------------------
 
-
   # ----------------------------
   # return results in R: coefficient results if there is a rhs
-
   list_tmp <- list() # initialize result is a list
   list_tmp$julia_call = julia_regcall;
 
@@ -185,12 +193,15 @@ FixedEffectInteract <- function(
   if (!is.null(fe)){
     setnames(augment, fe_split, paste0("p", fe_split))
   }
-  augment <- cbind(dt[, ife_split, with=F], augment)
+  augment <- cbind(dt_reg[, ife_split, with=F], augment)
+  # fill back the missing
+  augment <- rbind(dt[dt_missing[missing_tag==T], on = "temporary_id_key" ][, ife_split, with=F],
+        augment, fill = TRUE)
 
   # ----------------------------
   # output results (nothing saved yet)
   if (print == TRUE){
-    reg_list  <- julia_eval(paste0("reg_res;"))
+    reg_list  <- julia_eval(paste0("reg_res"))
     message(reg_list)
   }
 
