@@ -107,8 +107,8 @@ FixedEffectInteract <- function(
     dt[ !is.finite(get(lhs[lhs_iter])), c(lhs[lhs_iter]) := NA ]
     # dt_tmp[ !is.finite(dt_tmp[[lhs[lhs_iter]]]), c(lhs[lhs_iter]) := NA ] # Alternative writing in data.table
   }
-  dt_julia <- JuliaObject(dt)
-  julia_assign("df_julia", dt_julia)
+  julia_assign("df_julia", dt)
+
 
   # create pooled fe variables in the dataset
   for (iter in seq(1, length(ife_split))){
