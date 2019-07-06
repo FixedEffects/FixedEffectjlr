@@ -10,6 +10,8 @@
 #' @param fe        expression of fixed effects id1 + id2:id3
 #' @param weights   expression of weights
 #' @param vcov      Specification for the error
+#' @param maxiter   Parameter that passes to julia the solver max iteration
+#' @param timing    Add timing
 #' @param save_res  Save the results of the model
 #' @param print     do we print output or not
 #'
@@ -36,10 +38,13 @@ FixedEffectInteract <- function(
   fe       = NULL,
   weights  = NULL,
   vcov     = NULL,
+  maxiter  = 10000,
+  timing   = TRUE,
   save_res = TRUE,    # do we save PCs, loadings and fixed effects
   print    = TRUE
 ){
 
+  # initialize
   setDT(dt)
 
   # parse the rhs, fe and cluster
@@ -96,7 +101,7 @@ FixedEffectInteract <- function(
 
   julia_regcall = paste("reg_res = regife(df_julia, @model(",
                         paste(c(julia_formula, julia_ife, julia_reg_opt), collapse = ", "),
-                        ") );")
+                        "), maxiter =", maxiter, ");")
   julia_regcall <- gsub(", ,", ",", julia_regcall) # clean up because of missing instructions (e.g. when no fe are specified)
 
   # ---------------------------------
@@ -145,10 +150,15 @@ FixedEffectInteract <- function(
 
 
   # ----------------------------
-    # Managing exceptions in julia
+  # Managing exceptions in julia
+  # initialize:
+  julia_command("reg_res =  (augmentdf=0, coefnames=0);")
   julia_regcall_exception = gsub("reg_res = ", "", julia_regcall)
   julia_regcall_exception = paste0("reg_res = try ", julia_regcall_exception, "catch;  (augmentdf=0, coefnames=0) end;")
-  julia_regcall = julia_regcall_exception
+  julia_regcall = julia_regcall_exception;
+  if (timing == TRUE){
+    julia_regcall = paste("@time", julia_regcall);
+  }
   # ----------------------------
 
   # ----------------------------
@@ -156,7 +166,13 @@ FixedEffectInteract <- function(
     message(julia_regcall)
   }
   # Run the regression
-  julia_command(julia_regcall)
+  try(julia_command(julia_regcall))
+  #tryCatch(julia_command(julia_regcall),
+  #         error = function(c) "IFE error",
+  #         warning = function(c) "IFE warning",
+  #         message = function(c) "IFE message"
+  #)
+
   # ----------------------------
 
   # ----------------------------
