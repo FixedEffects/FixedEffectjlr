@@ -124,8 +124,6 @@ FixedEffectIV_nse <- function(
   # BUILD COEFFICIENT TABLE LIST
   ct <- list()   # CoefTable2
   julia_eval("jl_table = coeftable(reg_res);")
-  ct$ctitle   = julia_eval("title(reg_res)")
-  ct$ctop     = julia_eval("top(reg_res)")
   ct$cc       = julia_eval("coef(reg_res)")             # coefficients
   ct$se       = julia_eval("stderror(reg_res)")
   ct$tt       = julia_eval("coef(reg_res) ./ stderror(reg_res)")
