@@ -47,6 +47,11 @@ FixedEffect <- function(dt,
   fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
   fe_split <- unique( stringr::str_replace_all(fe_split, " ", "") )
   fe_split <- fe_split[ which(fe_split != "") ]
+  fe_formula = fe
+  for (fe_id in fe_split){
+    fe_formula = gsub(fe_id, paste0("fe(", fe_id, ")"), fe_formula)
+  } 
+  fe_formula = stringr::str_replace_all(fe_formula, "\\:", "\\&")
 
   # split all the clustering variables
   cluster_split <- NULL
@@ -59,13 +64,13 @@ FixedEffect <- function(dt,
   }
 
   # set the formula for julia
-  julia_formula  = paste(lhs, "~", rhs)
+  julia_formula  = paste(lhs, "~", rhs, "+", fe_formula)
 
   # set the options
-  julia_reg_fe   = paste("fe =", stringr::str_replace_all(fe, "\\:", "\\&"))
+  julia_reg_fe   = "" # paste("fe =", stringr::str_replace_all(fe, "\\:", "\\&"))
   if (!is.null(weights)){
     if (stringr::str_length(weights)>0){
-      julia_reg_fe   = paste(julia_reg_fe, ", weights =", weights)
+      julia_reg_fe   = paste(julia_reg_fe, "weights =", weights)
     } }
   if (is.null(vcov)){  # default to robust
     vcov <- "robust"
@@ -115,23 +120,24 @@ FixedEffect <- function(dt,
   dt_julia <- JuliaObject(dt)
   julia_assign("df_julia", dt_julia)
 
-
-  # create pooled fe variables in the julia dataset
-  for (iter in seq(1, length(fe_split))){
-    # convert to categorical if no fe with continuous interaction
-    if (!fe_interact | (classes[ name == fe_split[iter]]$colclass == "factor")){
-      if (verbose == T){ message("# converting ", fe_split[iter], " to categorical variable") }
-      pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
-                        " = categorical(df_julia[:",
-                        fe_split[iter], "]);")
-      julia_command(pool_cmd)
-    }
-  }
+  # create pooled fe variables in the julia dataset: not necessary anymore
+  # for (iter in seq(1, length(fe_split))){
+  #   # convert to categorical if no fe with continuous interaction
+  #   if (!fe_interact | (classes[ name == fe_split[iter]]$colclass == "factor")){
+  #     if (verbose == T){ message("# converting ", fe_split[iter], " to categorical variable") }
+  #     # pool_cmd = paste0("df_julia[:", fe_split[iter], "]",
+  #     pool_cmd = paste0("df_julia[!, :", fe_split[iter], "]",
+  #                       " = categorical(df_julia[!, :",
+  #                       fe_split[iter], "]);")
+  #     # message(pool_cmd)
+  #     julia_command(pool_cmd)
+  #   }
+  # }
   if ( stringr::str_length(paste(cluster_split, collapse="")) > 0 ){
     for (iter in seq(1, length(cluster_split))){
       if (verbose == T){ message("# converting ", fe_split[iter], " to categorical variable") }
-      pool_cmd = paste0("df_julia[:", cluster_split[iter], "]",
-                        " = categorical(df_julia[:",
+      pool_cmd = paste0("df_julia[!, :", cluster_split[iter], "]",
+                        " = categorical(df_julia[!, :",
                         cluster_split[iter], "]);")
       julia_command(pool_cmd)
     }
