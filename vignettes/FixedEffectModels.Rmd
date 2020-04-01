@@ -17,8 +17,7 @@ vignette: >
 
 ```r
 library(FixedEffectjlr)
-# JULIA_HOME <- "/Applications/Julia-0.6.app/Contents/Resources/julia/bin/"
-JULIA_HOME <- "/Applications/Julia-1.0.app/Contents/Resources/julia/bin/"
+JULIA_HOME <- "/Applications/Julia-1.4.app/Contents/Resources/julia/bin/"
 FixedEffect_setup(JULIA_HOME)
 ```
  
@@ -28,37 +27,18 @@ Run the standard example from `FixedEffectModels.jl`
 df <- Ecdat::Cigar
 reg_res <- FixedEffect(df,
   lhs = "sales", rhs = "ndi",
-  fe      = "state + year",
-  weights = "pop",
-  vcov    = "cluster(state)")
-```
-
-I tried to play with NSE, very much work in progress
-```r
-reg_res <- FixedEffect_nse(df, sales~ndi, state+year, pop, cluster(state))
+  fe      = c("state", "year"),
+  weights = c("pop"),
+  vcov    = c("state") )
 ```
 
 Waiting for a full `lm` object, I added a `coeftest` object so that it is possible to look at output with stargazer:
 ```r
 df <- Ecdat::Cigar
-reg1 <- FixedEffect_nse(df, sales~ndi, state+year, pop, robust)
-reg2 <- FixedEffect_nse(df, sales~ndi, state+year, pop, cluster(state))
-reg3 <- FixedEffect_nse(df, sales~ndi, state+year, vcov = robust)
-reg4 <- FixedEffect_nse(df, sales~ndi, state+year, vcov = cluster(state))
+reg1 <- FixedEffect(df, "sales", "ndi", c("state", "year"), "pop", "robust")
+reg2 <- FixedEffect(df, "sales", "ndi", c("state", "year"), "pop", c("state"))
 stargazer::stargazer(reg1$summary$coeftest, reg2$summary$coeftest,
-                     reg3$summary$coeftest, reg4$summary$coeftest,
                      type = "text")
-```
-
-Try different models and look at standard errors:
-```r
-df <- Ecdat::Cigar
-reg_res <- FixedEffect_models(
-  df,
-  lhs = "sales", rhs = "ndi",
-  fe      = "state + year",
-  weights = c("", "pop"),
-  vcov    = c("robust", "cluster(state)"))
 ```
 
 

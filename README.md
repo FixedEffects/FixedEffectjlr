@@ -33,9 +33,9 @@ To run a regression with fixed effects
 df <- Ecdat::Cigar
 reg_res <- FixedEffect(df,
   lhs = "sales", rhs = "ndi",
-  fe      = "state + year",
+  fe      = c("state", "year"),
   weights = "pop",
-  vcov    = "cluster(state)")
+  vcov    = c("state"))
   
 #                          Fixed Effect Model
 # =====================================================================
@@ -54,14 +54,17 @@ reg_res <- FixedEffect(df,
 + `FixedEffectModels.jl` accepts arbitrary number of fixed effects as well as interaction of categorical variables:
 
 ```r
-fe = "year + firm"
-fe = "year:industry"
+fe = c("year", "firm")
+fe = c("industry:year")  # interaction without levels
+fe = c("industry*year")  # interaction with levels
+fe = c("industry:^year") # treat second variable as continuous 
+fe = c("industry*^year") # treat second variable as continuous with first level
 ```
 
 + Standard errors are either adjusted for heteroscedasticity, `robust` or clustered by categories:
 ```r
 vcov = "robust"
-vcov = "cluster(industry + year)"
+vcov = c("industry", "year")
 ```
 
 + It is also possible to add weights:
