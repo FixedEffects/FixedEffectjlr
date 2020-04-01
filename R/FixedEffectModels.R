@@ -5,9 +5,9 @@
 #' @param dt        dataset of interest
 #' @param lhs       String, Y regression variable
 #' @param rhs       String, X formula
-#' @param fe        Fixed effects
+#' @param fe        Fixed effects: c("x", "y"), c("x:y"), c("x:^y")
 #' @param weights   Regression weights
-#' @param vcov      Specification for the error
+#' @param vcov      c("state", "date_y"), "robust, NULL
 #' @param save_res  Do we save the residuals
 #' @param print     Do we print the results
 #' @param verbose   Do we print status report on what's going on
@@ -32,28 +32,72 @@ FixedEffect <- function(dt,
                         verbose  = FALSE
 ){
 
-  # parse the rhs, fe and cluster
+
+  # --- PARSE THE RIGHT HAND SIDE
   rhs       <- stringr::str_replace_all(rhs, "\\:", "\\&")
   rhs_split <- unlist( stringr::str_split(rhs, "\\+") )
   rhs_split <- unlist( stringr::str_split(rhs_split, "\\&") )
   rhs_split <- unlist( stringr::str_split(rhs_split, "\\*") )
   rhs_split <- unique( stringr::str_replace_all(rhs_split, " ", "") )
 
+  # --- PARSE THE FIXED EFFECTS
   # N.B. on interaction term: do make sure variables have right type already in R!
-  fe_interact <- stringr::str_detect(fe, "\\*") | stringr::str_detect(fe, "\\:")   # check if there is an interaction term
-  fe_split    <- unlist( stringr::str_split(fe, "\\+") )
-  n_fe = length(fe_split)                             # useful for getfe function in julia
-  fe_split <- unlist( stringr::str_split(fe_split, "\\*") )
-  fe_split <- unlist( stringr::str_split(fe_split, "\\:") )
-  fe_split <- unique( stringr::str_replace_all(fe_split, " ", "") )
-  fe_split <- fe_split[ which(fe_split != "") ]
-  fe_formula = fe
-  for (fe_id in fe_split){
-    fe_formula = gsub(fe_id, paste0("fe(", fe_id, ")"), fe_formula)
-  }
-  fe_formula = stringr::str_replace_all(fe_formula, "\\:", "\\&")
+  list_fe <- purrr::map(fe, ~ stringr::str_split(., "[\\:\\*\\^]") )
+  list_fe <- purrr::map_chr(unlist(list_fe), ~ stringr::str_replace_all(., " ", "") )
+  list_fe <- unique(list_fe[ stringr::str_length(list_fe)>0])
+  n_fe = length(list_fe)                             # useful for getfe function in julia
 
-  # split all the clustering variables
+  # parse the different types
+  interaction_1_idx <- unique(c(grep("[\\:]", fe)))
+  interaction_all_idx <- unique(c(grep("[\\*]", fe)))
+  interaction_c_idx <- unique(c(grep("[\\^]", fe)))
+  # group all of the interaction terms
+  interaction_idx <- unique(c(interaction_1_idx, interaction_all_idx, interaction_c_idx))
+  interaction_idx <- interaction_idx[order(interaction_idx)]
+
+  interaction_1_idx
+  interaction_all_idx
+  interaction_c_idx
+
+  fe_formula <- ""
+    for ( fe_idx in seq(1, length(fe)) ){
+    if (!(fe_idx %in% interaction_idx)){
+      fe_formula <- c(fe_formula, paste0("fe(", fe[fe_idx], ")"))
+    } else if (fe_idx %in% interaction_idx){
+      # discrete case first
+      if ( !(fe_idx %in% interaction_c_idx) ){
+        fe_tmp <- fe[fe_idx]
+        fe_tmp <- unlist( stringr::str_split(fe_tmp, "\\*") )
+        fe_tmp <- unlist( stringr::str_split(fe_tmp, "\\:") )
+        # simple or also levels
+        if (fe_idx %in% interaction_1_idx){
+          fe_formula <- c(fe_formula, paste0(paste0("fe(", fe_tmp, ")"), collapse="&"))
+        } else if ( fe_idx %in% interaction_all_idx){
+          fe_tmp_all <- paste0("fe(", fe_tmp, ")")
+          fe_formula <- c(fe_formula,
+                          paste0(paste0(fe_tmp_all, collapse=" + "), " + ", paste0(fe_tmp_all, collapse="&")) )
+        }
+        # continuous case
+      } else if (fe_idx %in% interaction_c_idx){
+        fe_tmp <- fe[fe_idx]
+        fe_tmp <- unlist( stringr::str_split(fe_tmp, "\\*") )
+        fe_tmp <- unlist( stringr::str_split(fe_tmp, "\\:") )
+        fe_tmp1 <- grep("[\\^]", fe_tmp, value = T, invert=T)
+        fe_tmp2 <- gsub("[\\^]", "", grep("[\\^]", fe_tmp, value = T))
+        #  simple or also levels
+        if (fe_idx %in% interaction_1_idx){
+          fe_formula <- c(fe_formula, paste0("fe(", fe_tmp1, ")&", fe_tmp2))
+        } else if ( fe_idx %in% interaction_all_idx){
+          fe_formula <- c(fe_formula,
+                          paste0("fe(", fe_tmp1, ") + fe(", fe_tmp1, ")&", fe_tmp2) )
+        }
+      }
+    }
+  }
+  fe_formula <- fe_formula[str_length(fe_formula)>0]
+  fe_formula <- paste(unique(fe_formula), collapse = " + ")
+
+  # --- split all the clustering variables
   cluster_split <- NULL
   if (!is.null(vcov)){
     cluster_split <- gsub("cluster", "",
@@ -67,27 +111,38 @@ FixedEffect <- function(dt,
   julia_formula  = paste(lhs, "~", rhs, "+", fe_formula)
 
   # set the options
-  julia_reg_fe   = "" # paste("fe =", stringr::str_replace_all(fe, "\\:", "\\&"))
+  julia_reg_weights <- ""
   if (!is.null(weights)){
     if (stringr::str_length(weights)>0){
-      julia_reg_fe   = paste(julia_reg_fe, "weights =", weights)
+      julia_reg_weights   = paste0("weights = :", weights)
     } }
-  if (is.null(vcov)){  # default to robust
-    vcov <- "robust"
-  } else if (!stringr::str_detect(vcov, "cluster")) {
-    vcov <- "robust"
+  # covariance
+  julia_reg_vcov = " Vcov.robust()" # default to robust
+  if (is.null(vcov)){
+    julia_reg_vcov = ""
+  } else if (sum(vcov %in% colnames(dt))>0) {
+    # vcov[vcov %in% colnames(dt)]
+    julia_reg_vcov <- paste0("Vcov.cluster(:", paste0(vcov[vcov %in% colnames(dt)], collapse=", :"), ")" )
+  } else  {
+    julia_reg_vcov = " Vcov.robust()"
   }
-  julia_reg_vcov = paste("vcov = ", vcov)
-  julia_reg_save = paste("save = ", ifelse(save_res, "true", "false"))
-  julia_reg_opt  = paste(c(julia_reg_fe, julia_reg_vcov, julia_reg_save),
-                         collapse = ", ")
 
-  julia_regcall = paste("reg_fe(x) = reg(df_julia, @model(",
-                        paste(c(julia_formula, julia_reg_opt), collapse = ", "),
-                        ") );")
+  julia_reg_save = paste0("save = ", ifelse(save_res, "true", "false"))
+
+  julia_reg_opt <- c(julia_reg_vcov, julia_reg_save)
+  julia_reg_opt <- julia_reg_opt[str_length(julia_reg_opt)>0]
+  julia_reg_opt <- paste(julia_reg_opt, collapse = ", ")
+  if (str_length(julia_reg_weights) > 0){
+    julia_reg_opt  = paste0(julia_reg_opt, ", ", julia_reg_weights)
+  }
+
+
+  julia_regcall = paste0("reg_fe(x) = reg(df_julia, @formula(", julia_formula, "), ",
+                         julia_reg_opt, collapse = ", ",
+                         ");")
 
   # move only the right amount of data into julia (faster)
-  col_keep = intersect(names(dt), c(lhs, rhs_split, fe_split, cluster_split, weights))
+  col_keep = intersect(names(dt), c(lhs, rhs_split, list_fe, cluster_split, weights))
   dt <- data.table(dt)[, c(col_keep), with = F ]
 
   # get the types of all the variables: important to define categoricals in julia
@@ -107,11 +162,11 @@ FixedEffect <- function(dt,
     }
   }
  # for continuous variables remove the NaN
- for ( fe_iter in seq(1, length(fe_split))){
-   if (classes[ name == fe_split[fe_iter]][["colclass"]] %in% c("numeric", "integer") ){
-     dt[ !is.finite(get(fe_split[fe_iter])),  c(fe_split[fe_iter]) := NA ]
-     if (verbose == T & (nrow(dt[ !is.finite(get(fe_split[fe_iter] ))])>0) ) {
-       message("# removing NA for continuous fe variable ... ", fe_split[fe_iter])
+ for ( fe_iter in seq(1, length(list_fe)) ){
+   if (classes[ name == list_fe[fe_iter]][["colclass"]] %in% c("numeric", "integer") ){
+     dt[ !is.finite(get(list_fe[fe_iter])),  c(list_fe[fe_iter]) := NA ]
+     if (verbose == T & (nrow(dt[ !is.finite(get(list_fe[fe_iter] ))])>0) ) {
+       message("# removing NA for continuous fe variable ... ", list_fe[fe_iter])
      }
    }
  }
@@ -127,9 +182,7 @@ FixedEffect <- function(dt,
   if (verbose == T){
     message("# running regression in FixedEffectModels.jl\n",
             "# julia call is ...\n",
-            paste("reg(df_julia, @model(",
-                  paste(c(julia_formula, julia_reg_opt), collapse = ", "),
-                  ") );"))
+            julia_regcall)
   }
   julia_command(julia_regcall) # function that executes the regression
   # now catch errors with try/catch in julia
@@ -165,7 +218,7 @@ end;")
     names(jl_coefficients) = julia_eval("reg_res.coefnames")
     z$coefficients = jl_coefficients
     if (save_res == TRUE){
-      z$residuals = julia_eval("reg_res.augmentdf[:residuals]")
+      z$residuals = julia_eval("reg_res.augmentdf[!, :residuals]")
       z$fitted.values = julia_eval(paste0("df_julia[:", lhs, "] - reg_res.augmentdf[:residuals]"))
     }
     # effects
@@ -181,13 +234,17 @@ end;")
     ## z$xlevels <- list()
     ## names(z$xlevels) <- c()
 
-    if (stringr::str_detect(vcov, "cluster")){
+    if ( is.null(vcov) ){
+      cluster_formula <- "0"
+    } else if ( grepl("robust", vcov) ){
+      cluster_formula <- "0"
+    } else {
       cluster_formula <- gsub("cluster", "",
                               gsub("[()]", "", vcov) )
-    } else {
-      cluster_formula <- "0"
     }
-    R_call = paste(julia_formula, "|", fe, "| 0 |", cluster_formula)
+    R_call = paste(lhs, "~", rhs, "|",
+                   paste0(gsub("[\\^]", "", fe), collapse = " + "),
+                   "| 0 |", cluster_formula)
     z$call = list(R_call = as.formula(R_call), julia_call = julia_regcall)
     # terms
     z$terms = terms(as.formula(R_call))
